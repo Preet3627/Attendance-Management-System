@@ -1,0 +1,7 @@
+{
+  "name": "Attendance Management System",
+  "description": "An application to take student attendance by scanning QR codes, export the data as a CSV file, and provide instructions for uploading it to the ponsrischool.in WordPress portal.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

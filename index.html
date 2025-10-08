@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Polyfill for html5-qrcode
+        if (typeof global === 'undefined') {
+            var global = window;
+        }
+    </script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+      @media screen {
+        /* Hide the dedicated print container on screen */
+        #print-root {
+          display: none;
+        }
+      }
+      @media print {
+        @page {
+          size: A4;
+          margin: 1cm;
+        }
+
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        /* Hide the main app content when printing */
+        body > #root {
+          display: none;
+        }
+        
+        /* Show the dedicated print container */
+        #print-root {
+          display: block;
+        }
+
+        .id-card-print-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5mm;
+            justify-content: flex-start;
+        }
+
+        .id-card-print-wrapper {
+            width: 54mm;      /* Swapped for portrait orientation */
+            height: 85.6mm;   /* Swapped for portrait orientation */
+            border: 1px dashed #ccc; /* Cut lines */
+            page-break-inside: avoid;
+            overflow: hidden;
+        }
+      }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <div id="print-root"></div>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "qrcode.react": "https://aistudiocdn.com/qrcode.react@^4.2.0",
+        "jszip": "https://aistudiocdn.com/jszip@^3.10.1",
+        "esbuild-wasm": "https://aistudiocdn.com/esbuild-wasm@^0.23.0"
+      }
+    }
+    </script>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
