@@ -1,4 +1,4 @@
-// FIX: Removed a circular import of the 'User' type. A file cannot import from itself.
+// FIX: Provided full content for types.ts to define all data structures used in the app.
 export interface Student {
     studentId: string;
     studentName: string;
@@ -18,6 +18,13 @@ export interface Teacher {
     profilePhotoUrl?: string;
 }
 
+export interface ClassData {
+    id: string;
+    name: string;
+    teacherId: string;
+    students: string[]; // student IDs
+}
+
 export interface StudentAttendanceRecord {
     id: string;
     name: string;
@@ -26,7 +33,6 @@ export interface StudentAttendanceRecord {
 
 export interface QrScanResult {
     decodedText: string;
-    // This is a simplified version of the result object from html5-qrcode
     result: {
         format: {
             formatName: string;
@@ -46,14 +52,6 @@ export interface TeacherAttendanceRecord {
 
 export interface User {
     email: string;
-    password?: string; // Password should not be sent back to the client
+    password?: string;
     role: 'superuser' | 'user';
-}
-
-export interface ClassData {
-    id: string;
-    class_name: string;
-    sections: string | null;
-    class_numeric: string;
-    class_capacity: string;
 }

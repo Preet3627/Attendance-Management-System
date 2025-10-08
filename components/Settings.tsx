@@ -11,7 +11,7 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/school-management/school-management.php';
+const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/school_management_plugin/main/school-management.php';
 const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/.htaccess';
 
 

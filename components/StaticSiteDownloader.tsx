@@ -76,8 +76,8 @@ import ScanSuccessModal from './components/ScanSuccessModal';
 import Header from './components/Header';
 import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon } from './components/icons';
 
-// NOTE: The 'export_website' view is intentionally removed from the static build
-// as it is a development-only feature.
+// NOTE: The 'export_website' and 'class_management' views are intentionally removed from the static build
+// as they are development-only features.
 type View = 'student_attendance' | 'teacher_attendance' | 'data_viewer' | 'settings';
 
 const App: React.FC = () => {
@@ -475,7 +475,10 @@ const apiFetch = async (endpoint: string, secretKey: string, options: RequestIni
 
 export const syncAllData = async (secretKey: string): Promise<SyncDataResponse> => {
     const data = await apiFetch('/data', secretKey, { method: 'GET' });
-    return data;
+    return {
+        students: data?.students || [],
+        teachers: data?.teachers || [],
+    };
 };
 
 export const uploadStudentAttendance = async (records: StudentAttendanceRecord[], secretKey: string): Promise<boolean> => {
@@ -903,8 +906,8 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/school_management_plugin/main/school-management/school-management.php';
-const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/school_management_plugin/main/.htaccess';
+const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/school_management_plugin/main/school-management.php';
+const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/.htaccess';
 
 const WordPressPluginCode = ({ code, version, isLoading, error }: { code: string, version: string, isLoading: boolean, error: string | null }) => {
     const [copyText, setCopyText] = useState('Copy Code');
@@ -1801,9 +1804,8 @@ const StaticSiteDownloader: React.FC = () => {
         const initializeEsbuild = async () => {
             if (!esbuildInitialized.current) {
                 try {
-                    // Use the default export for the wasm binary
                     await esbuild.initialize({
-                        wasmURL: 'https://aistudiocdn.com/esbuild-wasm@^0.23.0/esbuild.wasm',
+                        wasmURL: 'https://unpkg.com/esbuild-wasm@0.23.0/esbuild.wasm',
                     });
                     esbuildInitialized.current = true;
                 } catch (e) {

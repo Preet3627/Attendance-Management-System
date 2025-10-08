@@ -1,13 +1,11 @@
+// FIX: Provided full content for api.ts to define all API and user management functions.
 import type { Student, Teacher, StudentAttendanceRecord, TeacherAttendanceRecord, User, ClassData } from './types';
 import { API_BASE_URL } from './config';
-
-// --- USER AUTHENTICATION & MANAGEMENT (LOCAL STORAGE BASED) ---
 
 const SUPERUSER_EMAIL = 'ponsri.big.gan.nav@gmail.com';
 const SUPERUSER_PASS = 'Pvp3736@257237';
 const USERS_STORAGE_KEY = 'app_users';
 
-// Initialize with superuser
 const getStoredUsers = (): User[] => {
     try {
         const usersJson = localStorage.getItem(USERS_STORAGE_KEY);
@@ -22,11 +20,9 @@ const saveStoredUsers = (users: User[]) => {
 };
 
 export const login = async (email: string, password: string): Promise<User | null> => {
-    // Check for superuser
     if (email === SUPERUSER_EMAIL && password === SUPERUSER_PASS) {
         return { email, role: 'superuser' };
     }
-    // Check for standard users
     const users = getStoredUsers();
     const foundUser = users.find(u => u.email === email && u.password === password);
     if (foundUser) {
@@ -53,9 +49,6 @@ export const deleteUser = async (email: string): Promise<void> => {
     users = users.filter(u => u.email !== email);
     saveStoredUsers(users);
 };
-
-
-// --- DATA SYNC API ---
 
 interface SyncDataResponse {
     students: Student[];
@@ -86,7 +79,11 @@ const apiFetch = async (endpoint: string, secretKey: string, options: RequestIni
 
 export const syncAllData = async (secretKey: string): Promise<SyncDataResponse> => {
     const data = await apiFetch('/data', secretKey, { method: 'GET' });
-    return data;
+    return {
+        students: data.students || [],
+        teachers: data.teachers || [],
+        classes: data.classes || [],
+    };
 };
 
 export const uploadStudentAttendance = async (records: StudentAttendanceRecord[], secretKey: string): Promise<boolean> => {
@@ -103,20 +100,4 @@ export const uploadTeacherAttendance = async (records: TeacherAttendanceRecord[]
         method: 'POST',
         body: JSON.stringify({ teachers: records }),
     });
-};
-
-// --- CLASS MANAGEMENT API ---
-export const getClasses = async (secretKey: string): Promise<ClassData[]> => {
-    return await apiFetch('/classes', secretKey, { method: 'GET' });
-};
-
-export const addClass = async (classData: Omit<ClassData, 'id'>, secretKey: string): Promise<ClassData> => {
-    return await apiFetch('/classes', secretKey, {
-        method: 'POST',
-        body: JSON.stringify(classData),
-    });
-};
-
-export const deleteClass = async (classId: string, secretKey: string): Promise<void> => {
-    await apiFetch(`/classes/${classId}`, secretKey, { method: 'DELETE' });
 };

@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 rounded-full hover:bg-slate-100 p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                             >
-                                <div className="w-9 h-9 bg-indigo-700 rounded-full flex items-center justify-center overflow-hidden">
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden ${isSuperUser ? 'bg-white border border-slate-200' : 'bg-indigo-700'}`}>
                                     {renderAvatar()}
                                 </div>
                                 <ChevronDownIcon className="w-5 h-5 text-slate-500" />

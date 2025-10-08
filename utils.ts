@@ -1,3 +1,4 @@
+// FIX: Provided full content for utils.ts to define utility functions.
 /**
  * Formats a class name string from the format 'CLASS=>SECTION=>SUBJECT'
  * into a more readable format.

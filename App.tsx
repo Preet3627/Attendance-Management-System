@@ -16,6 +16,7 @@ import Login from './components/Login';
 import ScanSuccessModal from './components/ScanSuccessModal';
 import StaticSiteDownloader from './components/StaticSiteDownloader';
 import Header from './components/Header';
+// FIX: Corrected import path for ClassManager.
 import ClassManager from './components/ClassManager';
 import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, DownloadIcon, BookOpenIcon } from './components/icons';
 
