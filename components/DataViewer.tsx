@@ -6,6 +6,8 @@ import InfoModal from './InfoModal';
 import { UserIcon, UsersIcon, IdentificationIcon, InformationCircleIcon } from './icons';
 import { formatClassName } from '../utils';
 
+type PrintOrientation = 'portrait' | 'landscape';
+
 interface DataViewerProps {
     students: Student[];
     teachers: Teacher[];
@@ -15,6 +17,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
     const [view, setView] = useState<'students' | 'teachers'>('students');
     const [selectedPrintClass, setSelectedPrintClass] = useState<string>('all');
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const [printOrientation, setPrintOrientation] = useState<PrintOrientation>('portrait');
 
     const filteredStudents = useMemo(() => students.filter(s => s.class && s.class.trim() !== '' && s.class.toLowerCase() !== 'null'), [students]);
 
@@ -99,7 +102,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
             </InfoModal>
         )}
         <div className="bg-white rounded-lg shadow-lg">
-            <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div className="flex items-center gap-4">
                      <div className="sm:hidden">
                         <select
@@ -124,22 +127,35 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
                         </nav>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {view === 'students' && groupedStudents && (
-                        <select
-                            value={selectedPrintClass}
-                            onChange={(e) => setSelectedPrintClass(e.target.value)}
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
-                        >
-                            <option value="all">Print All Classes</option>
-                            {Object.keys(groupedStudents).map(className => (
-                                <option key={className} value={className}>{`Print ${className}`}</option>
-                            ))}
-                        </select>
-                    )}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                    <div className="flex-grow flex flex-col gap-2">
+                        {view === 'students' && groupedStudents && (
+                            <select
+                                value={selectedPrintClass}
+                                onChange={(e) => setSelectedPrintClass(e.target.value)}
+                                className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
+                            >
+                                <option value="all">Print All Classes</option>
+                                {Object.keys(groupedStudents).map(className => (
+                                    <option key={className} value={className}>{`Print ${className}`}</option>
+                                ))}
+                            </select>
+                        )}
+                         <div className="flex items-center space-x-4">
+                            <span className="text-sm font-medium text-slate-700">Orientation:</span>
+                            <div className="flex items-center">
+                                <input id="portrait" name="orientation" type="radio" checked={printOrientation === 'portrait'} onChange={() => setPrintOrientation('portrait')} className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" />
+                                <label htmlFor="portrait" className="ml-2 block text-sm text-gray-900">Portrait</label>
+                            </div>
+                            <div className="flex items-center">
+                                <input id="landscape" name="orientation" type="radio" checked={printOrientation === 'landscape'} onChange={() => setPrintOrientation('landscape')} className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" />
+                                <label htmlFor="landscape" className="ml-2 block text-sm text-gray-900">Landscape</label>
+                            </div>
+                        </div>
+                    </div>
                     <button
                         onClick={handlePrint}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 flex-shrink-0"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 flex-shrink-0 h-full"
                     >
                         <IdentificationIcon className="w-5 h-5" />
                         Print ID Cards
@@ -195,7 +211,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
             </div>
 
             {printRoot && ReactDOM.createPortal(
-                <PrintableView people={peopleToPrint} type={type} />,
+                <PrintableView people={peopleToPrint} type={type} orientation={printOrientation} />,
                 printRoot
             )}
         </div>

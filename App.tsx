@@ -15,12 +15,11 @@ import DataViewer from './components/DataViewer';
 import Settings from './components/Settings';
 import Login from './components/Login';
 import ScanSuccessModal from './components/ScanSuccessModal';
-import StaticSiteDownloader from './components/StaticSiteDownloader';
 import Header from './components/Header';
 import ClassManager from './components/ClassManager';
 import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, DownloadIcon, BookOpenIcon } from './components/icons';
 
-type View = 'qr_attendance' | 'teacher_attendance' | 'class_management' | 'data_viewer' | 'settings' | 'export_website';
+type View = 'qr_attendance' | 'teacher_attendance' | 'class_management' | 'data_viewer' | 'settings';
 
 const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -269,8 +268,6 @@ const App: React.FC = () => {
                 return <DataViewer students={students} teachers={teachers} />;
             case 'settings':
                 return <Settings onSaveKey={handleSaveKey} onLogout={handleLogout} secretKey={secretKey} currentUser={currentUser} />;
-            case 'export_website':
-                return <StaticSiteDownloader />;
             default:
                 return null;
         }
@@ -307,7 +304,6 @@ const App: React.FC = () => {
                             <option value="teacher_attendance">Teacher Attendance</option>
                             <option value="class_management">Class</option>
                             <option value="data_viewer">Manage Data & IDs</option>
-                            <option value="export_website">Export Website</option>
                             <option value="settings">Settings</option>
                         </select>
                     </div>
@@ -341,13 +337,6 @@ const App: React.FC = () => {
                                 >
                                     <IdentificationIcon className="w-5 h-5" />
                                     Manage Data & IDs
-                                </button>
-                                <button
-                                    onClick={() => setView('export_website')}
-                                    className={`${view === 'export_website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
-                                >
-                                    <DownloadIcon className="w-5 h-5" />
-                                    Export Website
                                 </button>
                                 <button
                                     onClick={() => setView('settings')}

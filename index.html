@@ -48,9 +48,17 @@
             justify-content: flex-start;
         }
 
-        .id-card-print-wrapper {
-            width: 54mm;      /* Swapped for portrait orientation */
-            height: 85.6mm;   /* Swapped for portrait orientation */
+        .portrait-card {
+            width: 54mm;
+            height: 85.6mm;
+            border: 1px dashed #ccc; /* Cut lines */
+            page-break-inside: avoid;
+            overflow: hidden;
+        }
+
+        .landscape-card {
+            width: 85.6mm;
+            height: 54mm;
             border: 1px dashed #ccc; /* Cut lines */
             page-break-inside: avoid;
             overflow: hidden;
@@ -62,18 +70,18 @@
     <div id="root"></div>
     <div id="print-root"></div>
     <script type="importmap">
-    {
-      "imports": {
-        "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "qrcode.react": "https://aistudiocdn.com/qrcode.react@^4.2.0",
-        "jszip": "https://aistudiocdn.com/jszip@^3.10.1",
-        "esbuild-wasm": "https://unpkg.com/esbuild-wasm@0.23.0/esm/browser.js"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "qrcode.react": "https://aistudiocdn.com/qrcode.react@^4.2.0",
+    "jszip": "https://aistudiocdn.com/jszip@^3.10.1",
+    "esbuild-wasm": "https://aistudiocdn.com/esbuild-wasm@^0.25.10"
+  }
+}
+</script>
     <script type="module" src="/index.tsx"></script>
 </body>
 </html>
