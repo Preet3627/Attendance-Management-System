@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
-import * as esbuild from 'esbuild-wasm';
+import esbuild, { type Plugin } from 'esbuild-wasm';
 import { DownloadIcon, SpinnerIcon } from './icons';
 
 // This object contains the entire source code of the application.
@@ -1734,7 +1734,7 @@ const StaticSiteDownloader: React.FC = () => {
         setError(null);
 
         try {
-            const inMemoryPlugin: esbuild.Plugin = {
+            const inMemoryPlugin: Plugin = {
                 name: 'in-memory-plugin',
                 setup(build) {
                     build.onResolve({ filter: /.*/ }, args => {
