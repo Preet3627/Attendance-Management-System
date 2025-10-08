@@ -103,14 +103,14 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-md">
+        <div className="bg-white rounded-lg shadow-lg">
             <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-4">
                      <div className="sm:hidden">
                         <select
                             id="tabs-mobile"
                             name="tabs-mobile"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
                             onChange={(e) => setView(e.target.value as 'students' | 'teachers')}
                             value={view}
                         >
@@ -134,7 +134,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
                         <select
                             value={selectedPrintClass}
                             onChange={(e) => setSelectedPrintClass(e.target.value)}
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
                         >
                             <option value="all">Print All Classes</option>
                             {Object.keys(groupedStudents).map(className => (
@@ -144,7 +144,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
                     )}
                     <button
                         onClick={handlePrint}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex-shrink-0"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 flex-shrink-0"
                     >
                         <IdentificationIcon className="w-5 h-5" />
                         Print ID Cards

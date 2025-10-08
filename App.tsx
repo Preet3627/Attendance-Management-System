@@ -15,7 +15,8 @@ import Settings from './components/Settings';
 import Login from './components/Login';
 import ScanSuccessModal from './components/ScanSuccessModal';
 import StaticSiteDownloader from './components/StaticSiteDownloader';
-import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SchoolLogo, SettingsIcon, SpinnerIcon, LogoutIcon, DownloadIcon } from './components/icons';
+import Header from './components/Header';
+import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, DownloadIcon } from './components/icons';
 
 type View = 'student_attendance' | 'teacher_attendance' | 'data_viewer' | 'settings' | 'export_website';
 
@@ -168,7 +169,7 @@ const App: React.FC = () => {
     if (isSyncingOnLoad) {
         return (
             <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center gap-4">
-                <SpinnerIcon className="w-12 h-12 text-indigo-600" />
+                <SpinnerIcon className="w-12 h-12 text-indigo-700" />
                 <p className="text-slate-600">Connecting to school server...</p>
             </div>
         );
@@ -177,16 +178,7 @@ const App: React.FC = () => {
     if (!secretKey) {
         return (
              <div className="min-h-screen bg-slate-100 font-sans">
-                 <header className="bg-white shadow-md">
-                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                         <div className="flex justify-between items-center h-16">
-                             <div className="flex items-center gap-4">
-                                 <SchoolLogo className="h-12"/>
-                                 <h1 className="text-xl font-bold text-slate-800">Attendance Portal Setup</h1>
-                             </div>
-                         </div>
-                     </div>
-                 </header>
+                 <Header currentUser={currentUser} onLogout={()=>{}} onNavigate={()=>{}}/>
                  <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                     <Settings onSaveKey={handleSaveKey} initialSetup={true} currentUser={currentUser} />
                  </main>
@@ -200,11 +192,11 @@ const App: React.FC = () => {
                 return (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                         <div className="space-y-6">
-                            <div className="p-6 bg-white rounded-lg shadow-md">
+                            <div className="p-6 bg-white rounded-lg shadow-lg">
                                 <h3 className="text-lg font-semibold text-slate-800 mb-4">QR Code Scanner</h3>
                                 <button
                                     onClick={() => setIsScanning(!isScanning)}
-                                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                                 >
                                     {isScanning ? <><StopIcon className="w-5 h-5 mr-2" /> Stop Scanner</> : <><CameraIcon className="w-5 h-5 mr-2" /> Start Scanner</>}
                                 </button>
@@ -238,27 +230,11 @@ const App: React.FC = () => {
                     onClose={() => setLastScannedInfo(null)}
                 />
             )}
-            <header className="bg-white shadow-md sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <div className="flex items-center gap-4">
-                            <SchoolLogo className="h-12"/>
-                            <h1 className="text-xl font-bold text-slate-800">Attendance Portal</h1>
-                        </div>
-                         <button
-                            onClick={handleLogout}
-                            className="inline-flex items-center gap-2 px-3 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            <LogoutIcon className="w-5 h-5" />
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <Header currentUser={currentUser} onLogout={handleLogout} onNavigate={(view) => setView(view as View)} />
 
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 {syncError && (
-                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow" role="alert">
                         <p className="font-bold">Data Sync Error</p>
                         <p>{syncError}</p>
                     </div>
@@ -268,7 +244,7 @@ const App: React.FC = () => {
                         <select
                             id="tabs"
                             name="tabs"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
                             onChange={(e) => setView(e.target.value as View)}
                             value={view}
                         >
@@ -284,35 +260,35 @@ const App: React.FC = () => {
                             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                                 <button
                                     onClick={() => setView('student_attendance')}
-                                    className={`${view === 'student_attendance' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'student_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
                                 >
                                     <QrCodeIcon className="w-5 h-5" />
                                     Student Attendance
                                 </button>
                                 <button
                                     onClick={() => setView('teacher_attendance')}
-                                    className={`${view === 'teacher_attendance' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'teacher_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
                                 >
                                     <UsersIcon className="w-5 h-5" />
                                     Teacher Attendance
                                 </button>
                                 <button
                                     onClick={() => setView('data_viewer')}
-                                    className={`${view === 'data_viewer' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'data_viewer' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
                                 >
                                     <IdentificationIcon className="w-5 h-5" />
                                     Manage Data & IDs
                                 </button>
                                 <button
                                     onClick={() => setView('export_website')}
-                                    className={`${view === 'export_website' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'export_website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
                                 >
                                     <DownloadIcon className="w-5 h-5" />
                                     Export Website
                                 </button>
                                 <button
                                     onClick={() => setView('settings')}
-                                    className={`${view === 'settings' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'settings' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
                                 >
                                     <SettingsIcon className="w-5 h-5" />
                                     Settings

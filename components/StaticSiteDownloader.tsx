@@ -218,7 +218,7 @@ const App: React.FC = () => {
     if (isSyncingOnLoad) {
         return (
             <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center gap-4">
-                <SpinnerIcon className="w-12 h-12 text-indigo-600" />
+                <SpinnerIcon className="w-12 h-12 text-indigo-700" />
                 <p className="text-slate-600">Connecting to school server...</p>
             </div>
         );
@@ -254,7 +254,7 @@ const App: React.FC = () => {
                                 <h3 className="text-lg font-semibold text-slate-800 mb-4">QR Code Scanner</h3>
                                 <button
                                     onClick={() => setIsScanning(!isScanning)}
-                                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                                 >
                                     {isScanning ? <><StopIcon className="w-5 h-5 mr-2" /> Stop Scanner</> : <><CameraIcon className="w-5 h-5 mr-2" /> Start Scanner</>}
                                 </button>
@@ -295,7 +295,7 @@ const App: React.FC = () => {
                         </div>
                          <button
                             onClick={handleLogout}
-                            className="inline-flex items-center gap-2 px-3 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            className="inline-flex items-center gap-2 px-3 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                         >
                             <LogoutIcon className="w-5 h-5" />
                             Logout
@@ -316,7 +316,7 @@ const App: React.FC = () => {
                         <select
                             id="tabs"
                             name="tabs"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
                             onChange={(e) => setView(e.target.value as View)}
                             value={view}
                         >
@@ -331,28 +331,28 @@ const App: React.FC = () => {
                             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                                 <button
                                     onClick={() => setView('student_attendance')}
-                                    className={\`\${view === 'student_attendance' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2\`}
+                                    className={\`\${view === 'student_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2\`}
                                 >
                                     <QrCodeIcon className="w-5 h-5" />
                                     Student Attendance
                                 </button>
                                 <button
                                     onClick={() => setView('teacher_attendance')}
-                                    className={\`\${view === 'teacher_attendance' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2\`}
+                                    className={\`\${view === 'teacher_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2\`}
                                 >
                                     <UsersIcon className="w-5 h-5" />
                                     Teacher Attendance
                                 </button>
                                 <button
                                     onClick={() => setView('data_viewer')}
-                                    className={\`\${view === 'data_viewer' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2\`}
+                                    className={\`\${view === 'data_viewer' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2\`}
                                 >
                                     <IdentificationIcon className="w-5 h-5" />
                                     Manage Data & IDs
                                 </button>
                                 <button
                                     onClick={() => setView('settings')}
-                                    className={\`\${view === 'settings' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2\`}
+                                    className={\`\${view === 'settings' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2\`}
                                 >
                                     <SettingsIcon className="w-5 h-5" />
                                     Settings
@@ -722,7 +722,7 @@ const DataControls: React.FC<DataControlsProps> = ({ onSync }) => {
                     <button
                         onClick={handleSync}
                         disabled={isSyncing}
-                        className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-100 disabled:cursor-wait transition-colors"
+                        className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:bg-slate-100 disabled:cursor-wait transition-colors"
                     >
                         {isSyncing ? (
                             <><SpinnerIcon className="w-5 h-5 mr-2" /> Syncing...</>
@@ -799,12 +799,12 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm"
                     />
                     <button
                         onClick={handleSubmit}
                         disabled={teachers.length === 0 || isSubmitting}
-                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-wait"
+                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:bg-indigo-500 disabled:cursor-wait"
                     >
                         {isSubmitting ? <><SpinnerIcon className="w-5 h-5 mr-2" />Submitting...</> : 'Submit'}
                     </button>
@@ -837,7 +837,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                                             name={\`attendance-\${teacher.id}\`}
                                             value={teacherAttendance.status}
                                             onChange={(e) => handleStatusChange(teacher.id, e.target.value as AttendanceStatus)}
-                                            className="w-full p-1 border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                            className="w-full p-1 border-slate-300 rounded-md shadow-sm focus:ring-indigo-700 focus:border-indigo-700"
                                         >
                                             {statuses.map(status => (
                                                 <option key={status} value={status}>{status}</option>
@@ -849,7 +849,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                                             type="text"
                                             value={teacherAttendance.comment}
                                             onChange={(e) => handleCommentChange(teacher.id, e.target.value)}
-                                            className="w-full max-w-xs px-2 py-1 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            className="w-full max-w-xs px-2 py-1 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm"
                                         />
                                     </td>
                                 </tr>
@@ -963,7 +963,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
                         <select
                             id="tabs-mobile"
                             name="tabs-mobile"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm rounded-md"
                             onChange={(e) => setView(e.target.value as 'students' | 'teachers')}
                             value={view}
                         >
@@ -987,7 +987,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
                         <select
                             value={selectedPrintClass}
                             onChange={(e) => setSelectedPrintClass(e.target.value)}
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm rounded-md"
                         >
                             <option value="all">Print All Classes</option>
                             {Object.keys(groupedStudents).map(className => (
@@ -997,7 +997,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
                     )}
                     <button
                         onClick={handlePrint}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex-shrink-0"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 flex-shrink-0"
                     >
                         <IdentificationIcon className="w-5 h-5" />
                         Print ID Cards
@@ -1270,7 +1270,7 @@ const WordPressPluginCode = () => {
                 </h3>
                 <button
                     onClick={handleCopy}
-                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-150 ease-in-out"
+                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 transition-all duration-150 ease-in-out"
                 >
                     {copyText}
                 </button>
@@ -1379,13 +1379,13 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                             id="secret-key"
                             value={secretKey}
                             onChange={(e) => setSecretKey(e.target.value)}
-                            className="flex-grow shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-slate-300 rounded-md"
+                            className="flex-grow shadow-sm focus:ring-indigo-700 focus:border-indigo-700 block w-full sm:text-sm border-slate-300 rounded-md"
                             placeholder="Enter your secret key"
                         />
                          <button
                             onClick={handleSave}
                             disabled={isSaving || !secretKey.trim()}
-                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-wait"
+                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:bg-indigo-500 disabled:cursor-wait"
                         >
                             {isSaving ? <><SpinnerIcon className="w-5 h-5 mr-2" /> Saving...</> : 'Save Key'}
                         </button>
@@ -1400,18 +1400,18 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                      <form onSubmit={handleAddUser} className="space-y-4 sm:flex sm:items-end sm:gap-4">
                         <div className="flex-grow">
                              <label htmlFor="new-user-email" className="block text-sm font-medium text-slate-700">New User Email</label>
-                             <input type="email" id="new-user-email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required className="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-slate-300 rounded-md" />
+                             <input type="email" id="new-user-email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required className="mt-1 shadow-sm focus:ring-indigo-700 focus:border-indigo-700 block w-full sm:text-sm border-slate-300 rounded-md" />
                         </div>
                         <div className="flex-grow">
                              <label htmlFor="new-user-password" className="block text-sm font-medium text-slate-700">Password</label>
-                             <input type="password" id="new-user-password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} required className="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-slate-300 rounded-md" />
+                             <input type="password" id="new-user-password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} required className="mt-1 shadow-sm focus:ring-indigo-700 focus:border-indigo-700 block w-full sm:text-sm border-slate-300 rounded-md" />
                         </div>
                          <button type="submit" className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Add User</button>
                      </form>
                     
                     <div className="border-t pt-4">
                         <h4 className="font-semibold text-md text-slate-700 mb-2">Existing Users</h4>
-                        {isUsersLoading ? <SpinnerIcon className="w-6 h-6 text-indigo-500" /> : (
+                        {isUsersLoading ? <SpinnerIcon className="w-6 h-6 text-indigo-700" /> : (
                             <ul className="divide-y divide-slate-200">
                                 {users.map(user => (
                                      <li key={user.email} className="py-3 flex justify-between items-center">
@@ -1504,7 +1504,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-t-md focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm"
                                 placeholder="Email address"
                             />
                         </div>
@@ -1518,7 +1518,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-b-md focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm"
                                 placeholder="Password"
                             />
                         </div>
@@ -1528,7 +1528,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-wait"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:bg-indigo-500 disabled:cursor-wait"
                         >
                             {isLoading ? <SpinnerIcon className="h-5 w-5" /> : 'Sign in'}
                         </button>
@@ -1584,7 +1584,7 @@ const ScanSuccessModal: React.FC<ScanSuccessModalProps> = ({ student, scanTime, 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
+                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-700 text-base font-medium text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 sm:text-sm"
                     >
                         Close
                     </button>
@@ -1778,7 +1778,8 @@ const StaticSiteDownloader: React.FC = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Attendance Manager</title>
+    <title>Student Attendance</title>
+    <link rel="icon" href="https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         if (typeof global === 'undefined') { var global = window; }
@@ -1836,7 +1837,7 @@ No further build steps are needed.
     };
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-md space-y-6">
+        <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
             <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">Export Static Website</h3>
             <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4" role="alert">
                 <p className="font-bold">Deploy Anywhere</p>
@@ -1850,7 +1851,7 @@ No further build steps are needed.
                 <button
                     onClick={handleDownload}
                     disabled={isBuilding || !esbuildInitialized.current}
-                    className="inline-flex items-center justify-center gap-3 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-wait transition-all"
+                    className="inline-flex items-center justify-center gap-3 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-indigo-500 disabled:cursor-wait transition-all"
                 >
                     {isBuilding ? (
                         <>

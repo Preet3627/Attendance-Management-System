@@ -52,7 +52,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
     const statuses: AttendanceStatus[] = ['Present', 'Absent', 'Late', 'Half Day'];
 
     return (
-        <div className="bg-white rounded-lg shadow-md">
+        <div className="bg-white rounded-lg shadow-lg">
             <div className="p-4 border-b space-y-4 md:flex md:items-center md:justify-between md:space-y-0">
                 <h2 className="text-xl font-semibold text-slate-800">Manual Teacher Attendance</h2>
                 <div className="flex items-center gap-4">
@@ -60,12 +60,12 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                     />
                     <button
                         onClick={handleSubmit}
                         disabled={teachers.length === 0 || isSubmitting}
-                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-wait"
+                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-indigo-500 disabled:cursor-wait"
                     >
                         {isSubmitting ? <><SpinnerIcon className="w-5 h-5 mr-2" />Submitting...</> : 'Submit'}
                     </button>
@@ -98,7 +98,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                                             name={`attendance-${teacher.id}`}
                                             value={teacherAttendance.status}
                                             onChange={(e) => handleStatusChange(teacher.id, e.target.value as AttendanceStatus)}
-                                            className="w-full p-1 border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                            className="w-full p-1 border-slate-300 rounded-md shadow-sm focus:ring-indigo-600 focus:border-indigo-600"
                                         >
                                             {statuses.map(status => (
                                                 <option key={status} value={status}>{status}</option>
@@ -110,7 +110,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                                             type="text"
                                             value={teacherAttendance.comment}
                                             onChange={(e) => handleCommentChange(teacher.id, e.target.value)}
-                                            className="w-full max-w-xs px-2 py-1 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            className="w-full max-w-xs px-2 py-1 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                                         />
                                     </td>
                                 </tr>

@@ -37,7 +37,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                 <div className="flex flex-col items-center space-y-4">
                     <SchoolLogo className="h-20" />
                     <h2 className="text-2xl font-bold text-center text-slate-800">
-                        Attendance Portal Login
+                        Student Attendance
                     </h2>
                 </div>
                 <form className="space-y-6" onSubmit={handleSubmit}>
@@ -52,7 +52,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-t-md focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                                 placeholder="Email address"
                             />
                         </div>
@@ -66,7 +66,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-b-md focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                                 placeholder="Password"
                             />
                         </div>
@@ -80,7 +80,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-wait"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-indigo-500 disabled:cursor-wait"
                         >
                             {isLoading ? <SpinnerIcon className="h-5 w-5" /> : 'Sign in'}
                         </button>

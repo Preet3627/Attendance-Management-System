@@ -17,7 +17,7 @@ const DataControls: React.FC<DataControlsProps> = ({ onSync }) => {
     };
 
     return (
-        <div className="w-full p-6 bg-white rounded-lg shadow-md space-y-6">
+        <div className="w-full p-6 bg-white rounded-lg shadow-lg space-y-6">
             <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">Data Management</h3>
             
             <div className="space-y-2">
@@ -26,7 +26,7 @@ const DataControls: React.FC<DataControlsProps> = ({ onSync }) => {
                     <button
                         onClick={handleSync}
                         disabled={isSyncing}
-                        className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-100 disabled:cursor-wait transition-colors"
+                        className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-slate-100 disabled:cursor-wait transition-colors"
                     >
                         {isSyncing ? (
                             <><SpinnerIcon className="w-5 h-5 mr-2" /> Syncing...</>

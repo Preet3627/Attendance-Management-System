@@ -7,19 +7,23 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// FIX: Add explicit props interface for ErrorBoundary to ensure props are correctly typed.
 interface ErrorBoundaryProps {
   children: React.ReactNode;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, { hasError: boolean }> {
-  // FIX: The class property for state initialization was causing issues with `this.props` type resolution. Using a constructor ensures both props and state are correctly typed on the component instance.
+// FIX: Introduced a dedicated interface for the state to improve type safety.
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error) {
+  // FIX: Added an explicit return type to ensure correctness.
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true };
   }
 
