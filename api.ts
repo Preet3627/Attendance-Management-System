@@ -1,6 +1,5 @@
-// FIX: Provided full content for api.ts to define all API and user management functions.
 import type { Student, Teacher, StudentAttendanceRecord, TeacherAttendanceRecord, User, ClassData, AddClassPayload } from './types';
-import { API_BASE_URL, API_MGMT_BASE_URL } from './config';
+import { API_BASE_URL } from './config';
 
 const SUPERUSER_EMAIL = 'ponsri.big.gan.nav@gmail.com';
 const SUPERUSER_PASS = 'Pvp3736@257237';
@@ -56,12 +55,12 @@ interface SyncDataResponse {
     classes: ClassData[];
 }
 
-const apiFetch = async (endpoint: string, secretKey: string, options: RequestInit = {}, baseUrl: string = API_BASE_URL): Promise<any> => {
+const apiFetch = async (endpoint: string, secretKey: string, options: RequestInit = {}): Promise<any> => {
     const headers = new Headers(options.headers || {});
     headers.set('Content-Type', 'application/json');
     headers.set('X-Sync-Key', secretKey);
 
-    const response = await fetch(`${baseUrl}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
     });
@@ -78,23 +77,13 @@ const apiFetch = async (endpoint: string, secretKey: string, options: RequestIni
 };
 
 export const syncAllData = async (secretKey: string): Promise<SyncDataResponse> => {
-    // Fetch students and teachers from the primary data sync plugin
+    // Fetch students, teachers, and classes from the single, unified data sync plugin
     const mainData = await apiFetch('/data', secretKey, { method: 'GET' });
-
-    // Fetch classes separately from the school management plugin's endpoint
-    let fetchedClasses: ClassData[] = [];
-    try {
-        const classData = await apiFetch('/classes', secretKey, { method: 'GET' }, API_MGMT_BASE_URL);
-        fetchedClasses = classData || [];
-    } catch (error) {
-        console.error("Failed to sync classes:", error);
-        // Fail gracefully so the app can still load student/teacher data
-    }
 
     return {
         students: mainData.students || [],
         teachers: mainData.teachers || [],
-        classes: fetchedClasses,
+        classes: mainData.classes || [],
     };
 };
 
@@ -115,7 +104,7 @@ export const uploadTeacherAttendance = async (records: TeacherAttendanceRecord[]
 };
 
 export const getClasses = async (secretKey: string): Promise<ClassData[]> => {
-    const data = await apiFetch('/classes', secretKey, { method: 'GET' }, API_MGMT_BASE_URL);
+    const data = await apiFetch('/classes', secretKey, { method: 'GET' });
     return data || [];
 };
 
@@ -123,11 +112,11 @@ export const addClass = async (payload: AddClassPayload, secretKey: string): Pro
     return await apiFetch('/classes', secretKey, {
         method: 'POST',
         body: JSON.stringify(payload),
-    }, API_MGMT_BASE_URL);
+    });
 };
 
 export const deleteClass = async (classId: string, secretKey: string): Promise<any> => {
     return await apiFetch(`/classes/${classId}`, secretKey, {
         method: 'DELETE',
-    }, API_MGMT_BASE_URL);
+    });
 };

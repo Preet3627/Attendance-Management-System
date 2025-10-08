@@ -514,7 +514,7 @@ export interface AddClassPayload {
 }`,
   'api.ts': `
 import type { Student, Teacher, StudentAttendanceRecord, TeacherAttendanceRecord, User, ClassData, AddClassPayload } from './types';
-import { API_BASE_URL, API_MGMT_BASE_URL } from './config';
+import { API_BASE_URL } from './config';
 
 const SUPERUSER_EMAIL = 'ponsri.big.gan.nav@gmail.com';
 const SUPERUSER_PASS = 'Pvp3736@257237';
@@ -570,12 +570,12 @@ interface SyncDataResponse {
     classes: ClassData[];
 }
 
-const apiFetch = async (endpoint: string, secretKey: string, options: RequestInit = {}, baseUrl: string = API_BASE_URL): Promise<any> => {
+const apiFetch = async (endpoint: string, secretKey: string, options: RequestInit = {}): Promise<any> => {
     const headers = new Headers(options.headers || {});
     headers.set('Content-Type', 'application/json');
     headers.set('X-Sync-Key', secretKey);
 
-    const response = await fetch(\\\`\${baseUrl}\${endpoint}\\\`, {
+    const response = await fetch(\\\`\${API_BASE_URL}\${endpoint}\\\`, {
         ...options,
         headers,
     });
@@ -592,20 +592,13 @@ const apiFetch = async (endpoint: string, secretKey: string, options: RequestIni
 };
 
 export const syncAllData = async (secretKey: string): Promise<SyncDataResponse> => {
+    // Fetch students, teachers, and classes from the single, unified data sync plugin
     const mainData = await apiFetch('/data', secretKey, { method: 'GET' });
-
-    let fetchedClasses: ClassData[] = [];
-    try {
-        const classData = await apiFetch('/classes', secretKey, { method: 'GET' }, API_MGMT_BASE_URL);
-        fetchedClasses = classData || [];
-    } catch (error) {
-        console.error("Failed to sync classes:", error);
-    }
 
     return {
         students: mainData.students || [],
         teachers: mainData.teachers || [],
-        classes: fetchedClasses,
+        classes: mainData.classes || [],
     };
 };
 
@@ -626,7 +619,7 @@ export const uploadTeacherAttendance = async (records: TeacherAttendanceRecord[]
 };
 
 export const getClasses = async (secretKey: string): Promise<ClassData[]> => {
-    const data = await apiFetch('/classes', secretKey, { method: 'GET' }, API_MGMT_BASE_URL);
+    const data = await apiFetch('/classes', secretKey, { method: 'GET' });
     return data || [];
 };
 
@@ -634,17 +627,21 @@ export const addClass = async (payload: AddClassPayload, secretKey: string): Pro
     return await apiFetch('/classes', secretKey, {
         method: 'POST',
         body: JSON.stringify(payload),
-    }, API_MGMT_BASE_URL);
+    });
 };
 
 export const deleteClass = async (classId: string, secretKey: string): Promise<any> => {
     return await apiFetch(\\\`/classes/\${classId}\\\`, secretKey, {
         method: 'DELETE',
-    }, API_MGMT_BASE_URL);
-};`,
+    });
+};
+`,
   'config.ts': `
+// IMPORTANT: Configuration for connecting to the school's WordPress server.
+// This URL points to your 'Custom Data Sync for QR Attendance App' plugin endpoint.
+
 export const API_BASE_URL = 'https://ponsrischool.in/wp-json/custom-sync/v1';
-export const API_MGMT_BASE_URL = 'https://ponsrischool.in/wp-json/smgt/v1';`,
+`,
   'utils.ts': `
 export const formatClassName = (className: string | undefined | null): string => {
     if (!className || className.toLowerCase() === 'null') return 'N/A';
@@ -1336,8 +1333,8 @@ interface SettingsProps {
 const PLUGIN_CODE = \\\`<?php
 /*
 Plugin Name: Custom Data Sync for QR Attendance App
-Description: Provides a secure REST API endpoint to sync student and teacher data for the QR attendance app.
-Version: 1.7
+Description: Provides a secure REST API endpoint to sync student, teacher, and class data for the QR attendance app.
+Version: 2.0
 Author: QR App Support
 */
 
@@ -1354,14 +1351,33 @@ add_filter( 'rest_allowed_cors_headers', function( \\$allowed_headers ) {
 
 // Register the REST API routes
 add_action('rest_api_init', function () {
+    // Main data sync endpoint
     register_rest_route('custom-sync/v1', '/data', array(
         'methods' => 'GET',
         'callback' => 'sync_app_data',
         'permission_callback' => 'sync_permission_check',
     ));
+    // Attendance submission endpoint
     register_rest_route('custom-sync/v1', '/attendance', array(
         'methods' => 'POST',
         'callback' => 'receive_attendance_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+
+    // Class management endpoints
+    register_rest_route('custom-sync/v1', '/classes', array(
+        'methods' => 'GET',
+        'callback' => 'get_all_classes_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+    register_rest_route('custom-sync/v1', '/classes', array(
+        'methods' => 'POST',
+        'callback' => 'add_new_class_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+    register_rest_route('custom-sync/v1', '/classes/(?P<id>\\\\d+)', array(
+        'methods' => 'DELETE',
+        'callback' => 'delete_class_data',
         'permission_callback' => 'sync_permission_check',
     ));
 });
@@ -1385,11 +1401,9 @@ if (!function_exists('get_custom_user_photo_url')) {
         if (!empty(\\$avatar_meta)) {
             if (is_numeric(\\$avatar_meta)) {
                 \\$image_url = wp_get_attachment_image_url(\\$avatar_meta, 'full');
-                if (\\$image_url) {
-                    return \\$image_url;
-                }
+                return \\$image_url ?: get_avatar_url(\\$user_id);
             }
-            elseif (filter_var(\\$avatar_meta, FILTER_VALIDATE_URL)) {
+            if (filter_var(\\$avatar_meta, FILTER_VALIDATE_URL)) {
                 return \\$avatar_meta;
             }
         }
@@ -1397,17 +1411,58 @@ if (!function_exists('get_custom_user_photo_url')) {
     }
 }
 
-// Callback function to provide the data
+// Central function to fetch class data
+if (!function_exists('fetch_class_data_from_db')) {
+    function fetch_class_data_from_db() {
+        global \\$wpdb;
+        \\$class_table = \\$wpdb->prefix . 'smgt_class';
+        \\$usermeta_table = \\$wpdb->prefix . 'usermeta';
+
+        if (\\$wpdb->get_var("SHOW TABLES LIKE '\\$class_table'") != \\$class_table) {
+            return []; // Return empty if table doesn't exist
+        }
+
+        \\$classes_results = \\$wpdb->get_results("SELECT * FROM \\$class_table");
+        \\$classes_data = array();
+
+        foreach(\\$classes_results as \\$class) {
+            \\$student_count = \\$wpdb->get_var(\\$wpdb->prepare(
+                "SELECT COUNT(*) FROM \\$usermeta_table WHERE meta_key = 'class_name' AND meta_value = %s", \\$class->class_name
+            ));
+
+            \\$classes_data[] = array(
+                'id' => (string)\\$class->class_id,
+                'class_name' => \\$class->class_name,
+                'class_numeric' => \\$class->class_num_value,
+                'class_section' => maybe_unserialize(\\$class->section_name),
+                'class_capacity' => \\$class->class_capacity,
+                'student_count' => (int)\\$student_count,
+            );
+        }
+        return \\$classes_data;
+    }
+}
+
+// Callback for GET /classes
+if (!function_exists('get_all_classes_data')) {
+    function get_all_classes_data(\\$request) {
+        return new WP_REST_Response(fetch_class_data_from_db(), 200);
+    }
+}
+
+// Callback function for main data sync GET /data
 if (!function_exists('sync_app_data')) {
     function sync_app_data(\\$request) {
         \\$response_data = array(
             'students' => array(),
             'teachers' => array(),
+            'classes'  => array(),
         );
 
+        // Fetch Students
         \\$student_users = get_users(array('role' => 'student'));
         foreach (\\$student_users as \\$user) {
-            \\$student_data = array(
+            \\$response_data['students'][] = array(
                 'studentId'     => (string)\\$user->ID,
                 'studentName'   => \\$user->display_name,
                 'class'         => get_user_meta(\\$user->ID, 'class_name', true),
@@ -1416,12 +1471,12 @@ if (!function_exists('sync_app_data')) {
                 'contactNumber' => get_user_meta(\\$user->ID, 'mobile', true),
                 'profilePhotoUrl' => get_custom_user_photo_url(\\$user->ID),
             );
-            \\$response_data['students'][] = \\$student_data;
         }
 
+        // Fetch Teachers
         \\$teacher_users = get_users(array('role' => 'teacher'));
         foreach (\\$teacher_users as \\$user) {
-            \\$teacher_data = array(
+            \\$response_data['teachers'][] = array(
                 'id'    => (string)\\$user->ID,
                 'name'  => \\$user->display_name,
                 'role'  => 'Teacher',
@@ -1429,14 +1484,16 @@ if (!function_exists('sync_app_data')) {
                 'phone' => get_user_meta(\\$user->ID, 'mobile', true),
                 'profilePhotoUrl' => get_custom_user_photo_url(\\$user->ID),
             );
-            \\$response_data['teachers'][] = \\$teacher_data;
         }
+
+        // Fetch Classes
+        \\$response_data['classes'] = fetch_class_data_from_db();
 
         return new WP_REST_Response(\\$response_data, 200);
     }
 }
 
-// Callback function to receive attendance data
+// Callback function for POST /attendance
 if (!function_exists('receive_attendance_data')) {
     function receive_attendance_data(\\$request) {
         global \\$wpdb;
@@ -1445,16 +1502,13 @@ if (!function_exists('receive_attendance_data')) {
 
         if (isset(\\$params['students']) && is_array(\\$params['students'])) {
             foreach (\\$params['students'] as \\$student_record) {
-                 \\$wpdb->insert(
-                    \\$attendance_table,
-                    array(
-                        'user_id' => \\$student_record['id'],
-                        'attendence_date' => (new DateTime(\\$student_record['timestamp']))->format('Y-m-d'),
-                        'status' => 'Present',
-                        'attendence_by' => get_current_user_id() ?: 1,
-                        'role_name' => 'student'
-                    )
-                );
+                 \\$wpdb->insert(\\$attendance_table, array(
+                    'user_id' => \\$student_record['id'],
+                    'attendence_date' => (new DateTime(\\$student_record['timestamp']))->format('Y-m-d'),
+                    'status' => 'Present',
+                    'attendence_by' => 1, // Default to admin user
+                    'role_name' => 'student'
+                ));
             }
         }
         
@@ -1465,13 +1519,57 @@ if (!function_exists('receive_attendance_data')) {
                     'attendence_date' => \\$teacher_record['date'],
                     'status' => \\$teacher_record['status'],
                     'comment' => \\$teacher_record['comment'],
-                    'attendence_by' => get_current_user_id() ?: 1,
+                    'attendence_by' => 1, // Default to admin user
                     'role_name' => 'teacher'
                 ));
             }
         }
 
         return new WP_REST_Response(array('success' => true, 'message' => 'Attendance recorded.'), 200);
+    }
+}
+
+// Callback for POST /classes
+if (!function_exists('add_new_class_data')) {
+    function add_new_class_data(\\$request) {
+        global \\$wpdb;
+        \\$params = \\$request->get_json_params();
+        \\$class_table = \\$wpdb->prefix . 'smgt_class';
+
+        \\$data_to_insert = array(
+            'class_name' => sanitize_text_field(\\$params['class_name']),
+            'class_num_value' => intval(\\$params['class_numeric']),
+            'section_name' => serialize(\\$params['class_section']), // Serialize array for storage
+            'class_capacity' => intval(\\$params['class_capacity']),
+        );
+
+        \\$result = \\$wpdb->insert(\\$class_table, \\$data_to_insert);
+
+        if (\\$result === false) {
+            return new WP_Error('db_error', 'Could not add class to the database.', array('status' => 500));
+        }
+
+        return new WP_REST_Response(array('success' => true, 'message' => 'Class added successfully.'), 201);
+    }
+}
+
+// Callback for DELETE /classes/{id}
+if (!function_exists('delete_class_data')) {
+    function delete_class_data(\\$request) {
+        global \\$wpdb;
+        \\$class_id = (int) \\$request['id'];
+        \\$class_table = \\$wpdb->prefix . 'smgt_class';
+
+        \\$result = \\$wpdb->delete(\\$class_table, array('class_id' => \\$class_id), array('%d'));
+
+        if (\\$result === false) {
+             return new WP_Error('db_error', 'Could not delete class from the database.', array('status' => 500));
+        }
+        if (\\$result === 0) {
+            return new WP_Error('not_found', 'Class with the specified ID was not found.', array('status' => 404));
+        }
+
+        return new WP_REST_Response(array('success' => true, 'message' => 'Class deleted successfully.'), 200);
     }
 }
 
