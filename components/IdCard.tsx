@@ -52,7 +52,8 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
         );
     }
 
-    const qrValue = JSON.stringify({ id, name });
+    // FIX: Included 'type' in QR code data to ensure correct identification on scan.
+    const qrValue = JSON.stringify({ id, name, type });
     const securePhotoUrl = photoUrl?.replace(/^http:\/\//i, 'https://');
 
     return (

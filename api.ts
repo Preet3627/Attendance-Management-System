@@ -1,5 +1,5 @@
 // FIX: Provided full content for api.ts to define all API and user management functions.
-import type { Student, Teacher, StudentAttendanceRecord, TeacherAttendanceRecord, User, ClassData } from './types';
+import type { Student, Teacher, StudentAttendanceRecord, TeacherAttendanceRecord, User, ClassData, AddClassPayload } from './types';
 import { API_BASE_URL } from './config';
 
 const SUPERUSER_EMAIL = 'ponsri.big.gan.nav@gmail.com';
@@ -96,8 +96,28 @@ export const uploadStudentAttendance = async (records: StudentAttendanceRecord[]
 };
 
 export const uploadTeacherAttendance = async (records: TeacherAttendanceRecord[], secretKey: string): Promise<void> => {
+    // FIX: The plugin expects a single endpoint '/attendance' for both students and teachers.
+    // The payload for teachers must be wrapped in a 'teachers' object key.
     await apiFetch('/attendance', secretKey, {
         method: 'POST',
         body: JSON.stringify({ teachers: records }),
+    });
+};
+
+export const getClasses = async (secretKey: string): Promise<ClassData[]> => {
+    const data = await apiFetch('/classes', secretKey, { method: 'GET' });
+    return data || [];
+};
+
+export const addClass = async (payload: AddClassPayload, secretKey: string): Promise<any> => {
+    return await apiFetch('/classes', secretKey, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+};
+
+export const deleteClass = async (classId: string, secretKey: string): Promise<any> => {
+    return await apiFetch(`/classes/${classId}`, secretKey, {
+        method: 'DELETE',
     });
 };

@@ -11,11 +11,11 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/school_management_plugin/main/school-management.php';
+const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/qr-attendance-plugin.php';
 const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/.htaccess';
 
 
-const WordPressPluginCode = ({ code, version, isLoading, error }: { code: string, version: string, isLoading: boolean, error: string | null }) => {
+const WordPressPluginCode = ({ name, code, version, isLoading, error }: { name: string, code: string, version: string, isLoading: boolean, error: string | null }) => {
     const [copyText, setCopyText] = useState('Copy Code');
 
     const handleCopy = () => {
@@ -34,7 +34,7 @@ const WordPressPluginCode = ({ code, version, isLoading, error }: { code: string
         <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
             <div className="border-b pb-3 flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                    <ClipboardIcon className="w-5 h-5"/> WordPress Plugin Code {version && `(v${version})`}
+                    <ClipboardIcon className="w-5 h-5"/> {name} {version && `(v${version})`}
                 </h3>
                 <button
                     onClick={handleCopy}
@@ -125,7 +125,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
     const [isSaving, setIsSaving] = useState(false);
     
     // Server code state
-    const [pluginInfo, setPluginInfo] = useState({ code: '', version: '', error: null as string | null });
+    const [pluginInfo, setPluginInfo] = useState({ name: 'WordPress Plugin', code: '', version: '', error: null as string | null });
     const [htaccessInfo, setHtaccessInfo] = useState({ code: '', error: null as string | null });
     const [isLoadingCode, setIsLoadingCode] = useState(true);
 
@@ -161,12 +161,18 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
             if (!pluginResponse.ok) throw new Error(`Server responded with status ${pluginResponse.status}`);
             const pluginCode = await pluginResponse.text();
             const versionMatch = pluginCode.match(/Version:\s*([0-9.]+)/);
-            setPluginInfo({ code: pluginCode, version: versionMatch ? versionMatch[1] : 'N/A', error: null });
+            const nameMatch = pluginCode.match(/Plugin Name:\s*(.*)/);
+            setPluginInfo({ 
+                name: nameMatch ? nameMatch[1] : 'WordPress Plugin',
+                code: pluginCode, 
+                version: versionMatch ? versionMatch[1] : 'N/A', 
+                error: null 
+            });
         } catch (error) {
             const errorMessage = error instanceof Error && error.name === 'AbortError'
                 ? "Request timed out. Could not fetch plugin from GitHub."
                 : `Failed to fetch plugin: ${error instanceof Error ? error.message : "Unknown error"}.`;
-            setPluginInfo(prev => ({ ...prev, error: errorMessage, code: '', version: '' }));
+            setPluginInfo(prev => ({ ...prev, error: errorMessage, name: 'WordPress Plugin', code: '', version: '' }));
         }
     
         // Fetch .htaccess
@@ -351,7 +357,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                              </div>
                          </div>
                     </div>
-                    <WordPressPluginCode code={pluginInfo.code} version={pluginInfo.version} isLoading={isLoadingCode} error={pluginInfo.error} />
+                    <WordPressPluginCode name={pluginInfo.name} code={pluginInfo.code} version={pluginInfo.version} isLoading={isLoadingCode} error={pluginInfo.error} />
                     <HtaccessCode code={htaccessInfo.code} isLoading={isLoadingCode} error={htaccessInfo.error} />
                 </>
             )}

@@ -1,16 +1,21 @@
 import React from 'react';
-import type { Student } from '../types';
+import type { Student, Teacher } from '../types';
 import { UserIcon, CheckCircleIcon } from './icons';
 
 interface ScanSuccessModalProps {
-    student: Student;
+    person: Student | Teacher;
     scanTime: Date;
     onClose: () => void;
 }
 
-const ScanSuccessModal: React.FC<ScanSuccessModalProps> = ({ student, scanTime, onClose }) => {
+const ScanSuccessModal: React.FC<ScanSuccessModalProps> = ({ person, scanTime, onClose }) => {
     // Force HTTPS for avatar URLs to prevent mixed-content errors
-    const securePhotoUrl = student.profilePhotoUrl?.replace(/^http:\/\//i, 'https://');
+    const securePhotoUrl = person.profilePhotoUrl?.replace(/^http:\/\//i, 'https://');
+    
+    const isStudent = 'studentId' in person;
+    const name = isStudent ? person.studentName : person.name;
+    const id = isStudent ? person.studentId : person.id;
+
 
     return (
         <div 
@@ -27,13 +32,13 @@ const ScanSuccessModal: React.FC<ScanSuccessModalProps> = ({ student, scanTime, 
                     <div className="mt-6 flex flex-col items-center gap-4">
                         <div className="w-32 h-32 rounded-full bg-slate-200 border-4 border-slate-300 flex items-center justify-center overflow-hidden">
                             {securePhotoUrl ? 
-                                <img src={securePhotoUrl} alt={student.studentName} className="w-full h-full object-contain" /> : 
+                                <img src={securePhotoUrl} alt={name} className="w-full h-full object-contain" /> : 
                                 <UserIcon className="w-24 h-24 text-slate-400" />
                             }
                         </div>
                         <div className="text-slate-700">
-                             <p className="text-xl font-semibold">{student.studentName}</p>
-                             <p className="text-sm text-slate-500">ID: {student.studentId}</p>
+                             <p className="text-xl font-semibold">{name}</p>
+                             <p className="text-sm text-slate-500">ID: {id}</p>
                         </div>
                     </div>
                     

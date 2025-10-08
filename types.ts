@@ -7,6 +7,7 @@ export interface Student {
     rollNumber: string;
     contactNumber: string;
     profilePhotoUrl?: string;
+    type?: 'student';
 }
 
 export interface Teacher {
@@ -16,14 +17,18 @@ export interface Teacher {
     phone: string;
     email: string;
     profilePhotoUrl?: string;
+    type?: 'teacher';
 }
 
 export interface ClassData {
     id: string;
-    name: string;
-    teacherId: string;
-    students: string[]; // student IDs
+    class_name: string;
+    class_numeric: string;
+    class_section: string | string[];
+    class_capacity: string;
+    student_count?: number;
 }
+
 
 export interface StudentAttendanceRecord {
     id: string;
@@ -54,4 +59,11 @@ export interface User {
     email: string;
     password?: string;
     role: 'superuser' | 'user';
+}
+
+export interface AddClassPayload {
+    class_name: string;
+    class_numeric: string;
+    class_section: string[];
+    class_capacity: string;
 }

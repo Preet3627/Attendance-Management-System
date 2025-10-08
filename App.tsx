@@ -8,6 +8,7 @@ import {
 import type { Student, Teacher, StudentAttendanceRecord, AttendanceStatus, TeacherAttendanceRecord, User, ClassData } from './types';
 import QrScanner from './components/QrScanner';
 import AttendanceList from './components/AttendanceList';
+import TeacherAttendanceLog from './components/TeacherAttendanceLog';
 import DataControls from './components/ExportControls';
 import TeacherAttendance from './components/TeacherAttendance';
 import DataViewer from './components/DataViewer';
@@ -16,11 +17,10 @@ import Login from './components/Login';
 import ScanSuccessModal from './components/ScanSuccessModal';
 import StaticSiteDownloader from './components/StaticSiteDownloader';
 import Header from './components/Header';
-// FIX: Corrected import path for ClassManager.
 import ClassManager from './components/ClassManager';
 import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, DownloadIcon, BookOpenIcon } from './components/icons';
 
-type View = 'student_attendance' | 'teacher_attendance' | 'class_management' | 'data_viewer' | 'settings' | 'export_website';
+type View = 'qr_attendance' | 'teacher_attendance' | 'class_management' | 'data_viewer' | 'settings' | 'export_website';
 
 const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -29,7 +29,7 @@ const App: React.FC = () => {
     });
     const [secretKey, setSecretKey] = useState<string | null>(() => localStorage.getItem('API_SECRET_KEY'));
     const [isSyncingOnLoad, setIsSyncingOnLoad] = useState(true);
-    const [view, setView] = useState<View>('student_attendance');
+    const [view, setView] = useState<View>('qr_attendance');
     const [syncError, setSyncError] = useState<string | null>(null);
 
     // Data state
@@ -37,16 +37,17 @@ const App: React.FC = () => {
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [classes, setClasses] = useState<ClassData[]>([]);
     const [studentMap, setStudentMap] = useState<Map<string, Student>>(new Map());
+    const [teacherMap, setTeacherMap] = useState<Map<string, Teacher>>(new Map());
 
     // Student attendance state
     const [isScanning, setIsScanning] = useState(false);
-    const [lastScannedInfo, setLastScannedInfo] = useState<{ student: Student, time: Date } | null>(null);
+    const [lastScannedInfo, setLastScannedInfo] = useState<{ person: Student | Teacher, time: Date } | null>(null);
     const [scanError, setScanError] = useState<string | null>(null);
     const [attendanceRecords, setAttendanceRecords] = useState<StudentAttendanceRecord[]>([]);
     
     // Teacher attendance state
     const [teacherAttendance, setTeacherAttendance] = useState<Map<string, { status: AttendanceStatus; comment: string }>>(new Map());
-
+    const [teacherScanRecords, setTeacherScanRecords] = useState<TeacherAttendanceRecord[]>([]);
 
     // Effects
     useEffect(() => {
@@ -55,16 +56,15 @@ const App: React.FC = () => {
         } else {
             setIsSyncingOnLoad(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUser]);
 
     useEffect(() => {
-        if (students.length > 0) {
-            const map = new Map<string, Student>();
-            students.forEach(s => map.set(s.studentId, s));
-            setStudentMap(map);
-        }
+        setStudentMap(new Map(students.map(s => [s.studentId, s])));
     }, [students]);
+
+    useEffect(() => {
+        setTeacherMap(new Map(teachers.map(t => [t.id, t])));
+    }, [teachers]);
 
     // Handlers
     const handleLoginSuccess = (user: User) => {
@@ -75,7 +75,7 @@ const App: React.FC = () => {
     const handleSaveKey = (key: string) => {
         localStorage.setItem('API_SECRET_KEY', key);
         setSecretKey(key);
-        setView('student_attendance');
+        setView('qr_attendance');
         handleSync(key);
     };
     
@@ -84,12 +84,13 @@ const App: React.FC = () => {
         localStorage.removeItem('API_SECRET_KEY');
         setCurrentUser(null);
         setSecretKey(null);
-        // Clear all local data
         setStudents([]);
         setTeachers([]);
         setClasses([]);
         setStudentMap(new Map());
+        setTeacherMap(new Map());
         setAttendanceRecords([]);
+        setTeacherScanRecords([]);
         setTeacherAttendance(new Map());
         setSyncError(null);
     };
@@ -115,35 +116,68 @@ const App: React.FC = () => {
     
     const handleScanSuccess = async (decodedText: string) => {
         if (!secretKey) {
-            setScanError("Cannot submit attendance: Secret API key is not set.");
+            setScanError("Cannot process scan: Secret API key is not set.");
             return;
         }
         setScanError(null);
         setLastScannedInfo(null);
+
         try {
-            const { id, name } = JSON.parse(decodedText);
+            const qrData = JSON.parse(decodedText);
+            const { id, name, type } = qrData;
             if (!id || !name) throw new Error("Invalid QR code format.");
 
-            if (attendanceRecords.some(rec => rec.id === id)) {
-                setScanError(`Already marked present: ${name} (${id})`);
-                return;
-            }
-            
-            const student = studentMap.get(id);
-            if (!student) {
-                setScanError(`Student with ID ${id} not found. Please sync data first.`);
-                return;
-            }
+            const scanTime = new Date();
+            const timeString = scanTime.toLocaleTimeString();
 
-            const newRecord = { id, name, timestamp: new Date() };
-            await uploadStudentAttendance([newRecord], secretKey);
-            setAttendanceRecords(prev => [newRecord, ...prev]);
-            setLastScannedInfo({ student, time: newRecord.timestamp });
+            if (type === 'teacher') {
+                const teacher = teacherMap.get(id);
+                if (!teacher) {
+                    setScanError(`Teacher with ID ${id} not found. Please sync data.`);
+                    return;
+                }
+                if (teacherScanRecords.some(rec => rec.teacherId === id)) {
+                    setScanError(`Teacher ${name} already marked present.`);
+                    return;
+                }
+                // Update manual attendance state
+                setTeacherAttendance(prev => {
+                    const newAttendance = new Map(prev);
+                    newAttendance.set(id, { status: 'Present', comment: `Scanned at ${timeString}` });
+                    return newAttendance;
+                });
+                // Add to scan log for this session
+                const newRecord: TeacherAttendanceRecord = {
+                    teacherId: id,
+                    teacherName: name,
+                    date: scanTime.toISOString().split('T')[0],
+                    status: 'Present',
+                    comment: `Scanned at ${timeString}`
+                };
+                setTeacherScanRecords(prev => [newRecord, ...prev]);
+                setLastScannedInfo({ person: teacher, time: scanTime });
+
+            } else { // Default to student
+                if (attendanceRecords.some(rec => rec.id === id)) {
+                    setScanError(`Already marked present: ${name} (${id})`);
+                    return;
+                }
+                const student = studentMap.get(id);
+                if (!student) {
+                    setScanError(`Student with ID ${id} not found. Please sync data.`);
+                    return;
+                }
+                const newRecord = { id, name, timestamp: scanTime };
+                await uploadStudentAttendance([newRecord], secretKey);
+                setAttendanceRecords(prev => [newRecord, ...prev]);
+                setLastScannedInfo({ person: student, time: newRecord.timestamp });
+            }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
             setScanError(`Failed to process QR code. Error: ${errorMessage}`);
         }
     };
+
 
     const handleScanError = (errorMessage: string) => {
         if (errorMessage && !errorMessage.toLowerCase().includes('no qr code found')) {
@@ -165,11 +199,7 @@ const App: React.FC = () => {
         }
     };
 
-
-    // Render logic
-    if (!currentUser) {
-        return <Login onLogin={login} onLoginSuccess={handleLoginSuccess} />;
-    }
+    if (!currentUser) return <Login onLogin={login} onLoginSuccess={handleLoginSuccess} />;
 
     if (isSyncingOnLoad) {
         return (
@@ -191,28 +221,46 @@ const App: React.FC = () => {
         )
     }
 
+    const QrAttendanceView = () => {
+        const [logView, setLogView] = useState<'students'|'teachers'>('students');
+
+        return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <div className="space-y-6">
+                    <div className="p-6 bg-white rounded-lg shadow-lg">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-4">QR Code Scanner</h3>
+                        <button
+                            onClick={() => setIsScanning(!isScanning)}
+                            className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
+                        >
+                            {isScanning ? <><StopIcon className="w-5 h-5 mr-2" /> Stop Scanner</> : <><CameraIcon className="w-5 h-5 mr-2" /> Start Scanner</>}
+                        </button>
+                        {isScanning && <div className="mt-4 border-t pt-4"><QrScanner onScanSuccess={handleScanSuccess} onScanError={handleScanError} /></div>}
+                        {scanError && <p className="mt-2 text-sm text-red-600">{scanError}</p>}
+                    </div>
+                    <DataControls onSync={() => handleSync()} />
+                </div>
+                <div className="bg-white rounded-lg shadow-lg">
+                    <div className="border-b border-slate-200">
+                         <nav className="-mb-px flex space-x-6 px-6" aria-label="Tabs">
+                            <button onClick={() => setLogView('students')} className={`${logView === 'students' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+                                Student Log ({attendanceRecords.length})
+                            </button>
+                            <button onClick={() => setLogView('teachers')} className={`${logView === 'teachers' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+                                Teacher Log ({teacherScanRecords.length})
+                            </button>
+                         </nav>
+                    </div>
+                    {logView === 'students' ? <AttendanceList records={attendanceRecords} /> : <TeacherAttendanceLog records={teacherScanRecords} />}
+                </div>
+            </div>
+        );
+    };
+
     const renderView = () => {
         switch (view) {
-            case 'student_attendance':
-                return (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                        <div className="space-y-6">
-                            <div className="p-6 bg-white rounded-lg shadow-lg">
-                                <h3 className="text-lg font-semibold text-slate-800 mb-4">QR Code Scanner</h3>
-                                <button
-                                    onClick={() => setIsScanning(!isScanning)}
-                                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
-                                >
-                                    {isScanning ? <><StopIcon className="w-5 h-5 mr-2" /> Stop Scanner</> : <><CameraIcon className="w-5 h-5 mr-2" /> Start Scanner</>}
-                                </button>
-                                {isScanning && <div className="mt-4 border-t pt-4"><QrScanner onScanSuccess={handleScanSuccess} onScanError={handleScanError} /></div>}
-                                {scanError && <p className="mt-2 text-sm text-red-600">{scanError}</p>}
-                            </div>
-                            <DataControls onSync={() => handleSync()} />
-                        </div>
-                        <AttendanceList records={attendanceRecords} />
-                    </div>
-                );
+            case 'qr_attendance':
+                return <QrAttendanceView />;
             case 'teacher_attendance':
                 return <TeacherAttendance teachers={teachers} attendance={teacherAttendance} onAttendanceChange={setTeacherAttendance} onSubmit={handleSubmitTeacherAttendance} />;
             case 'class_management':
@@ -232,7 +280,7 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-slate-100 font-sans">
             {lastScannedInfo && (
                 <ScanSuccessModal 
-                    student={lastScannedInfo.student} 
+                    person={lastScannedInfo.person} 
                     scanTime={lastScannedInfo.time}
                     onClose={() => setLastScannedInfo(null)}
                 />
@@ -251,11 +299,11 @@ const App: React.FC = () => {
                         <select
                             id="tabs"
                             name="tabs"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                             onChange={(e) => setView(e.target.value as View)}
                             value={view}
                         >
-                            <option value="student_attendance">Student Attendance</option>
+                            <option value="qr_attendance">QR Attendance</option>
                             <option value="teacher_attendance">Teacher Attendance</option>
                             <option value="class_management">Class</option>
                             <option value="data_viewer">Manage Data & IDs</option>
@@ -267,43 +315,43 @@ const App: React.FC = () => {
                         <div className="border-b border-slate-200">
                             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                                 <button
-                                    onClick={() => setView('student_attendance')}
-                                    className={`${view === 'student_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    onClick={() => setView('qr_attendance')}
+                                    className={`${view === 'qr_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
                                 >
                                     <QrCodeIcon className="w-5 h-5" />
-                                    Student Attendance
+                                    QR Attendance
                                 </button>
                                 <button
                                     onClick={() => setView('teacher_attendance')}
-                                    className={`${view === 'teacher_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'teacher_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
                                 >
                                     <UsersIcon className="w-5 h-5" />
                                     Teacher Attendance
                                 </button>
                                  <button
                                     onClick={() => setView('class_management')}
-                                    className={`${view === 'class_management' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'class_management' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
                                 >
                                     <BookOpenIcon className="w-5 h-5" />
                                     Class
                                 </button>
                                 <button
                                     onClick={() => setView('data_viewer')}
-                                    className={`${view === 'data_viewer' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'data_viewer' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
                                 >
                                     <IdentificationIcon className="w-5 h-5" />
                                     Manage Data & IDs
                                 </button>
                                 <button
                                     onClick={() => setView('export_website')}
-                                    className={`${view === 'export_website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'export_website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
                                 >
                                     <DownloadIcon className="w-5 h-5" />
                                     Export Website
                                 </button>
                                 <button
                                     onClick={() => setView('settings')}
-                                    className={`${view === 'settings' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                    className={`${view === 'settings' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
                                 >
                                     <SettingsIcon className="w-5 h-5" />
                                     Settings
