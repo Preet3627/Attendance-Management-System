@@ -1330,11 +1330,11 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const PLUGIN_CODE = \`<?php
+const PLUGIN_CODE = \\\`<?php
 /*
 Plugin Name: Custom Data Sync for QR Attendance App
 Description: Provides a secure REST API endpoint to sync student, teacher, and class data for the QR attendance app.
-Version: 2.1
+Version: 2.2
 Author: QR App Support
 */
 
@@ -1344,9 +1344,9 @@ if (!defined('ABSPATH')) {
 }
 
 // IMPORTANT: Allow the 'X-Sync-Key' header for CORS requests.
-add_filter( 'rest_allowed_cors_headers', function( \$allowed_headers ) {
-    \$allowed_headers[] = 'x-sync-key';
-    return \$allowed_headers;
+add_filter( 'rest_allowed_cors_headers', function( \\\$allowed_headers ) {
+    \\\$allowed_headers[] = 'x-sync-key';
+    return \\\$allowed_headers;
 } );
 
 // Register the REST API routes
@@ -1375,7 +1375,7 @@ add_action('rest_api_init', function () {
         'callback' => 'add_new_class_data',
         'permission_callback' => 'sync_permission_check',
     ));
-    register_rest_route('custom-sync/v1', '/classes/(?P<id>\\d+)', array(
+    register_rest_route('custom-sync/v1', '/classes/(?P<id>\\\\d+)', array(
         'methods' => 'DELETE',
         'callback' => 'delete_class_data',
         'permission_callback' => 'sync_permission_check',
@@ -1384,10 +1384,10 @@ add_action('rest_api_init', function () {
 
 // Permission check for the API key
 if (!function_exists('sync_permission_check')) {
-    function sync_permission_check(\$request) {
-        \$secret_key = \$request->get_header('X-Sync-Key');
-        \$stored_key = get_option('qr_app_secret_key', ''); 
-        if (empty(\$stored_key) || empty(\$secret_key) || !hash_equals(\$stored_key, \$secret_key)) {
+    function sync_permission_check(\\\$request) {
+        \\\$secret_key = \\\$request->get_header('X-Sync-Key');
+        \\\$stored_key = get_option('qr_app_secret_key', ''); 
+        if (empty(\\\$stored_key) || empty(\\\$secret_key) || !hash_equals(\\\$stored_key, \\\$secret_key)) {
             return new WP_Error('rest_forbidden', 'Invalid or missing secret key.', array('status' => 401));
         }
         return true;
@@ -1396,115 +1396,115 @@ if (!function_exists('sync_permission_check')) {
 
 // Helper function to get user profile photo
 if (!function_exists('get_custom_user_photo_url')) {
-    function get_custom_user_photo_url(\$user_id) {
-        \$avatar_meta = get_user_meta(\$user_id, 'smgt_user_avatar', true);
-        if (!empty(\$avatar_meta)) {
-            if (is_numeric(\$avatar_meta)) {
-                \$image_url = wp_get_attachment_image_url(\$avatar_meta, 'full');
-                return \$image_url ?: get_avatar_url(\$user_id);
+    function get_custom_user_photo_url(\\\$user_id) {
+        \\\$avatar_meta = get_user_meta(\\\$user_id, 'smgt_user_avatar', true);
+        if (!empty(\\\$avatar_meta)) {
+            if (is_numeric(\\\$avatar_meta)) {
+                \\\$image_url = wp_get_attachment_image_url(\\\$avatar_meta, 'full');
+                return \\\$image_url ?: get_avatar_url(\\\$user_id);
             }
-            if (filter_var(\$avatar_meta, FILTER_VALIDATE_URL)) {
-                return \$avatar_meta;
+            if (filter_var(\\\$avatar_meta, FILTER_VALIDATE_URL)) {
+                return \\\$avatar_meta;
             }
         }
-        return get_avatar_url(\$user_id);
+        return get_avatar_url(\\\$user_id);
     }
 }
 
 // Central function to fetch class data
 if (!function_exists('fetch_class_data_from_db')) {
     function fetch_class_data_from_db() {
-        global \$wpdb;
-        \$class_table = \$wpdb->prefix . 'smgt_class';
-        \$usermeta_table = \$wpdb->prefix . 'usermeta';
+        global \\\$wpdb;
+        \\\$class_table = \\\$wpdb->prefix . 'smgt_class';
+        \\\$usermeta_table = \\\$wpdb->prefix . 'usermeta';
 
-        if (\$wpdb->get_var("SHOW TABLES LIKE '\$class_table'") != \$class_table) {
+        if (\\\$wpdb->get_var("SHOW TABLES LIKE '".\\\$class_table."'") != \\\$class_table) {
             return []; // Return empty if table doesn't exist
         }
 
-        \$classes_results = \$wpdb->get_results("SELECT * FROM \$class_table");
-        \$classes_data = array();
+        \\\$classes_results = \\\$wpdb->get_results("SELECT * FROM \\\$class_table");
+        \\\$classes_data = array();
 
-        foreach(\$classes_results as \$class) {
-            \$student_count = \$wpdb->get_var(\$wpdb->prepare(
-                "SELECT COUNT(*) FROM \$usermeta_table WHERE meta_key = 'class_name' AND meta_value = %s", \$class->class_name
+        foreach(\\\$classes_results as \\\$class) {
+            \\\$student_count = \\\$wpdb->get_var(\\\$wpdb->prepare(
+                "SELECT COUNT(*) FROM \\\$usermeta_table WHERE meta_key = 'class_name' AND meta_value = %s", \\\$class->class_name
             ));
 
-            \$classes_data[] = array(
-                'id' => (string)\$class->class_id,
-                'class_name' => \$class->class_name,
-                'class_numeric' => \$class->class_numeric,
-                'class_section' => maybe_unserialize(\$class->section_name),
-                'class_capacity' => \$class->class_capacity,
-                'student_count' => (int)\$student_count,
+            \\\$classes_data[] = array(
+                'id' => (string)\\\$class->class_id,
+                'class_name' => \\\$class->class_name,
+                'class_numeric' => \\\$class->class_numeric,
+                'class_section' => maybe_unserialize(\\\$class->section_name),
+                'class_capacity' => \\\$class->class_capacity,
+                'student_count' => (int)\\\$student_count,
             );
         }
-        return \$classes_data;
+        return \\\$classes_data;
     }
 }
 
 // Callback for GET /classes
 if (!function_exists('get_all_classes_data')) {
-    function get_all_classes_data(\$request) {
+    function get_all_classes_data(\\\$request) {
         return new WP_REST_Response(fetch_class_data_from_db(), 200);
     }
 }
 
 // Callback function for main data sync GET /data
 if (!function_exists('sync_app_data')) {
-    function sync_app_data(\$request) {
-        \$response_data = array(
+    function sync_app_data(\\\$request) {
+        \\\$response_data = array(
             'students' => array(),
             'teachers' => array(),
             'classes'  => array(),
         );
 
         // Fetch Students
-        \$student_users = get_users(array('role' => 'student'));
-        foreach (\$student_users as \$user) {
-            \$response_data['students'][] = array(
-                'studentId'     => (string)\$user->ID,
-                'studentName'   => \$user->display_name,
-                'class'         => get_user_meta(\$user->ID, 'class_name', true),
-                'section'       => get_user_meta(\$user->ID, 'class_section', true),
-                'rollNumber'    => get_user_meta(\$user->ID, 'roll_id', true),
-                'contactNumber' => get_user_meta(\$user->ID, 'mobile', true),
-                'profilePhotoUrl' => get_custom_user_photo_url(\$user->ID),
+        \\\$student_users = get_users(array('role' => 'student'));
+        foreach (\\\$student_users as \\\$user) {
+            \\\$response_data['students'][] = array(
+                'studentId'     => (string)\\\$user->ID,
+                'studentName'   => \\\$user->display_name,
+                'class'         => get_user_meta(\\\$user->ID, 'class_name', true),
+                'section'       => get_user_meta(\\\$user->ID, 'class_section', true),
+                'rollNumber'    => get_user_meta(\\\$user->ID, 'roll_id', true),
+                'contactNumber' => get_user_meta(\\\$user->ID, 'mobile', true) ?: get_user_meta(\\\$user->ID, 'phone', true),
+                'profilePhotoUrl' => get_custom_user_photo_url(\\\$user->ID),
             );
         }
 
         // Fetch Teachers
-        \$teacher_users = get_users(array('role' => 'teacher'));
-        foreach (\$teacher_users as \$user) {
-            \$response_data['teachers'][] = array(
-                'id'    => (string)\$user->ID,
-                'name'  => \$user->display_name,
+        \\\$teacher_users = get_users(array('role' => 'teacher'));
+        foreach (\\\$teacher_users as \\\$user) {
+            \\\$response_data['teachers'][] = array(
+                'id'    => (string)\\\$user->ID,
+                'name'  => \\\$user->display_name,
                 'role'  => 'Teacher',
-                'email' => \$user->user_email,
-                'phone' => get_user_meta(\$user->ID, 'mobile', true),
-                'profilePhotoUrl' => get_custom_user_photo_url(\$user->ID),
+                'email' => \\\$user->user_email,
+                'phone' => get_user_meta(\\\$user->ID, 'mobile', true) ?: get_user_meta(\\\$user->ID, 'phone', true),
+                'profilePhotoUrl' => get_custom_user_photo_url(\\\$user->ID),
             );
         }
 
         // Fetch Classes
-        \$response_data['classes'] = fetch_class_data_from_db();
+        \\\$response_data['classes'] = fetch_class_data_from_db();
 
-        return new WP_REST_Response(\$response_data, 200);
+        return new WP_REST_Response(\\\$response_data, 200);
     }
 }
 
 // Callback function for POST /attendance
 if (!function_exists('receive_attendance_data')) {
-    function receive_attendance_data(\$request) {
-        global \$wpdb;
-        \$params = \$request->get_json_params();
-        \$attendance_table = \$wpdb->prefix . 'smgt_attendence';
+    function receive_attendance_data(\\\$request) {
+        global \\\$wpdb;
+        \\\$params = \\\$request->get_json_params();
+        \\\$attendance_table = \\\$wpdb->prefix . 'smgt_attendence';
 
-        if (isset(\$params['students']) && is_array(\$params['students'])) {
-            foreach (\$params['students'] as \$student_record) {
-                 \$wpdb->insert(\$attendance_table, array(
-                    'user_id' => \$student_record['id'],
-                    'attendence_date' => (new DateTime(\$student_record['timestamp']))->format('Y-m-d'),
+        if (isset(\\\$params['students']) && is_array(\\\$params['students'])) {
+            foreach (\\\$params['students'] as \\\$student_record) {
+                 \\\$wpdb->insert(\\\$attendance_table, array(
+                    'user_id' => \\\$student_record['id'],
+                    'attendence_date' => (new DateTime(\\\$student_record['timestamp']))->format('Y-m-d'),
                     'status' => 'Present',
                     'attendence_by' => 1, // Default to admin user
                     'role_name' => 'student'
@@ -1512,13 +1512,13 @@ if (!function_exists('receive_attendance_data')) {
             }
         }
         
-        if (isset(\$params['teachers']) && is_array(\$params['teachers'])) {
-            foreach (\$params['teachers'] as \$teacher_record) {
-                \$wpdb->insert(\$attendance_table, array(
-                    'user_id' => \$teacher_record['teacherId'],
-                    'attendence_date' => \$teacher_record['date'],
-                    'status' => \$teacher_record['status'],
-                    'comment' => \$teacher_record['comment'],
+        if (isset(\\\$params['teachers']) && is_array(\\\$params['teachers'])) {
+            foreach (\\\$params['teachers'] as \\\$teacher_record) {
+                \\\$wpdb->insert(\\\$attendance_table, array(
+                    'user_id' => \\\$teacher_record['teacherId'],
+                    'attendence_date' => \\\$teacher_record['date'],
+                    'status' => \\\$teacher_record['status'],
+                    'comment' => \\\$teacher_record['comment'],
                     'attendence_by' => 1, // Default to admin user
                     'role_name' => 'teacher'
                 ));
@@ -1531,21 +1531,21 @@ if (!function_exists('receive_attendance_data')) {
 
 // Callback for POST /classes
 if (!function_exists('add_new_class_data')) {
-    function add_new_class_data(\$request) {
-        global \$wpdb;
-        \$params = \$request->get_json_params();
-        \$class_table = \$wpdb->prefix . 'smgt_class';
+    function add_new_class_data(\\\$request) {
+        global \\\$wpdb;
+        \\\$params = \\\$request->get_json_params();
+        \\\$class_table = \\\$wpdb->prefix . 'smgt_class';
 
-        \$data_to_insert = array(
-            'class_name' => sanitize_text_field(\$params['class_name']),
-            'class_numeric' => intval(\$params['class_numeric']),
-            'section_name' => serialize(\$params['class_section']), // Serialize array for storage
-            'class_capacity' => intval(\$params['class_capacity']),
+        \\\$data_to_insert = array(
+            'class_name' => sanitize_text_field(\\\$params['class_name']),
+            'class_numeric' => intval(\\\$params['class_numeric']),
+            'section_name' => serialize(\\\$params['class_section']), // Serialize array for storage
+            'class_capacity' => intval(\\\$params['class_capacity']),
         );
 
-        \$result = \$wpdb->insert(\$class_table, \$data_to_insert);
+        \\\$result = \\\$wpdb->insert(\\\$class_table, \\\$data_to_insert);
 
-        if (\$result === false) {
+        if (\\\$result === false) {
             return new WP_Error('db_error', 'Could not add class to the database.', array('status' => 500));
         }
 
@@ -1555,17 +1555,17 @@ if (!function_exists('add_new_class_data')) {
 
 // Callback for DELETE /classes/{id}
 if (!function_exists('delete_class_data')) {
-    function delete_class_data(\$request) {
-        global \$wpdb;
-        \$class_id = (int) \$request['id'];
-        \$class_table = \$wpdb->prefix . 'smgt_class';
+    function delete_class_data(\\\$request) {
+        global \\\$wpdb;
+        \\\$class_id = (int) \\\$request['id'];
+        \\\$class_table = \\\$wpdb->prefix . 'smgt_class';
 
-        \$result = \$wpdb->delete(\$class_table, array('class_id' => \$class_id), array('%d'));
+        \\\$result = \\\$wpdb->delete(\\\$class_table, array('class_id' => \\\$class_id), array('%d'));
 
-        if (\$result === false) {
+        if (\\\$result === false) {
              return new WP_Error('db_error', 'Could not delete class from the database.', array('status' => 500));
         }
-        if (\$result === 0) {
+        if (\\\$result === 0) {
             return new WP_Error('not_found', 'Class with the specified ID was not found.', array('status' => 404));
         }
 
@@ -1583,7 +1583,7 @@ if (!function_exists('qr_app_settings_page_html')) {
         if (!current_user_can('manage_options')) {
             return;
         }
-        if (isset(\$_GET['settings-updated'])) {
+        if (isset(\\\$_GET['settings-updated'])) {
             add_settings_error('qr_app_messages', 'qr_app_message', __('Settings Saved', 'qr-app-sync'), 'updated');
         }
         settings_errors('qr_app_messages');
@@ -1611,12 +1611,12 @@ add_action('admin_init', function() {
 
 if (!function_exists('qr_app_secret_key_callback')) {
     function qr_app_secret_key_callback() {
-        \$option = get_option('qr_app_secret_key');
-        echo '<input type="text" id="qr_app_secret_key" name="qr_app_secret_key" value="' . esc_attr(\$option) . '" size="50" />';
+        \\\$option = get_option('qr_app_secret_key');
+        echo '<input type="text" id="qr_app_secret_key" name="qr_app_secret_key" value="' . esc_attr(\\\$option) . '" size="50" />';
         echo '<p class="description">Enter a strong, unique secret key for the app to use. This must match the key entered in the app.</p>';
     }
 }
-?>\`;
+?>\\\`;
 
 const HtaccessCode = ({ code }: { code: string }) => {
     const [copyText, setCopyText] = useState('Copy Code');
@@ -2401,384 +2401,4 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
         }
     };
 
-    const formatSection = (section: string | string[]) => {
-        if (Array.isArray(section)) {
-            return section.join(', ');
-        }
-        return section || 'No Section';
-    }
-
-    return (
-        <>
-        {isModalOpen && (
-            <AddClassModal 
-                onClose={() => setIsModalOpen(false)} 
-                onAddClass={handleAddClass}
-            />
-        )}
-        <div className="bg-white rounded-lg shadow-lg">
-            <div className="p-4 sm:p-6 border-b flex flex-col sm:flex-row justify-between items-center gap-4">
-                <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
-                    <BookOpenIcon className="w-6 h-6" /> Class Management
-                </h2>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
-                >
-                    <PlusIcon className="w-5 h-5" />
-                    Add New Class
-                </button>
-            </div>
-
-            {error && <p className="m-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>}
-            
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Class Name</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Section</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Class Numeric Value</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Capacity</th>
-                            <th scope="col" className="relative px-6 py-3"><span className="sr-only">Action</span></th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
-                        {isLoading ? (
-                             <tr><td colSpan={5} className="text-center py-12"><SpinnerIcon className="w-8 h-8 mx-auto text-indigo-600" /></td></tr>
-                        ) : !classes || classes.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="text-center text-slate-500 py-12 px-6">
-                                    <div className="flex flex-col items-center">
-                                        <BookOpenIcon className="w-12 h-12 text-slate-300" />
-                                        <p className="font-semibold mt-2">No classes found.</p>
-                                        <p className="text-sm">Sync with the server or add a new class to begin.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        ) : classes.map((cls) => (
-                            <tr key={cls.id} className="hover:bg-slate-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{cls.class_name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatSection(cls.class_section)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{cls.class_numeric}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{\`\${cls.student_count || 0} Out Of \${cls.class_capacity}\`}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button 
-                                        onClick={() => handleDeleteClass(cls.id)} 
-                                        className="text-slate-400 hover:text-red-600 p-1 rounded-full transition-colors"
-                                        title="Delete Class"
-                                    >
-                                        <TrashIcon className="w-5 h-5" />
-                                        <span className="sr-only">Delete</span>
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        </>
-    );
-};
-
-// AddClassModal sub-component
-const AddClassModal: React.FC<{onClose: () => void, onAddClass: (payload: AddClassPayload) => Promise<void>}> = ({ onClose, onAddClass }) => {
-    const [name, setName] = useState('');
-    const [numeric, setNumeric] = useState('');
-    const [sections, setSections] = useState('');
-    const [capacity, setCapacity] = useState('');
-    const [error, setError] = useState('');
-    const [isAdding, setIsAdding] = useState(false);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setIsAdding(true);
-
-        const sectionsArray = sections.split(',').map(s => s.trim()).filter(Boolean);
-        if (sectionsArray.length === 0) {
-            setError('Please provide at least one section.');
-            setIsAdding(false);
-            return;
-        }
-
-        const payload: AddClassPayload = {
-            class_name: name,
-            class_numeric: numeric,
-            class_section: sectionsArray,
-            class_capacity: capacity,
-        };
-
-        try {
-            await onAddClass(payload);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-        } finally {
-            setIsAdding(false);
-        }
-    };
-    
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
-                <form onSubmit={handleSubmit}>
-                    <div className="p-6 border-b">
-                        <h3 className="text-lg font-semibold text-slate-800">Add New Class</h3>
-                    </div>
-                    <div className="p-6 space-y-4">
-                        {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>}
-                        <div>
-                            <label htmlFor="class_name" className="block text-sm font-medium text-slate-700">Class Name</label>
-                            <input type="text" id="class_name" value={name} onChange={e => setName(e.target.value)} required className="mt-1 w-full border-slate-300 rounded-md shadow-sm"/>
-                        </div>
-                         <div>
-                            <label htmlFor="class_numeric" className="block text-sm font-medium text-slate-700">Class Numeric Value</label>
-                            <input type="number" id="class_numeric" value={numeric} onChange={e => setNumeric(e.target.value)} required className="mt-1 w-full border-slate-300 rounded-md shadow-sm"/>
-                        </div>
-                        <div>
-                            <label htmlFor="class_section" className="block text-sm font-medium text-slate-700">Sections</label>
-                            <input type="text" id="class_section" value={sections} onChange={e => setSections(e.target.value)} required className="mt-1 w-full border-slate-300 rounded-md shadow-sm"/>
-                            <p className="text-xs text-slate-500 mt-1">Enter comma-separated values for multiple sections (e.g., A, B, C).</p>
-                        </div>
-                         <div>
-                            <label htmlFor="class_capacity" className="block text-sm font-medium text-slate-700">Student Capacity</label>
-                            <input type="number" id="class_capacity" value={capacity} onChange={e => setCapacity(e.target.value)} required className="mt-1 w-full border-slate-300 rounded-md shadow-sm"/>
-                        </div>
-                    </div>
-                    <div className="px-6 py-3 bg-slate-50 flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Cancel</button>
-                        <button type="submit" disabled={isAdding} className="px-4 py-2 text-sm font-medium text-white bg-indigo-700 border border-transparent rounded-md shadow-sm hover:bg-indigo-800 disabled:bg-indigo-400">
-                            {isAdding ? <SpinnerIcon className="w-5 h-5"/> : 'Add Class'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-
-export default ClassManager;`,
-};
-
-const CodeBlock = ({ title, code, instructions }: { title: string, code: string, instructions: string }) => {
-    const [copyText, setCopyText] = useState('Copy Code');
-    const handleCopy = () => {
-        navigator.clipboard.writeText(code).then(() => {
-            setCopyText('Copied!');
-            setTimeout(() => setCopyText('Copy'), 2000);
-        });
-    };
-    return (
-        <div className="space-y-3">
-            <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-md text-slate-700">{title}</h4>
-                <button 
-                    onClick={handleCopy} 
-                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out"
-                >
-                    <ClipboardIcon className="w-4 h-4"/>
-                    {copyText}
-                </button>
-            </div>
-            <p className="text-sm text-slate-600" dangerouslySetInnerHTML={{ __html: instructions }}></p>
-            <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto max-h-60">
-                <code>{code}</code>
-            </pre>
-        </div>
-    );
-};
-
-const StaticSiteDownloader: React.FC = () => {
-    const [isBuilding, setIsBuilding] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [generatedCode, setGeneratedCode] = useState<{ html: string; js: string; htaccess: string } | null>(null);
-    const esbuildInitialized = useRef(false);
-
-    useEffect(() => {
-        const initializeEsbuild = async () => {
-            if (!esbuildInitialized.current) {
-                try {
-                    await esbuild.initialize({
-                        wasmURL: 'https://unpkg.com/esbuild-wasm@0.23.0/esbuild.wasm',
-                    });
-                    esbuildInitialized.current = true;
-                } catch (e) {
-                    setError('Failed to initialize the bundler. Please try refreshing the page.');
-                    console.error(e);
-                }
-            }
-        };
-        initializeEsbuild();
-    }, []);
-
-    const handleGenerate = async () => {
-        if (!esbuildInitialized.current) {
-            setError('Bundler is not ready yet. Please wait a moment and try again.');
-            return;
-        }
-        setIsBuilding(true);
-        setError(null);
-        setGeneratedCode(null);
-
-        try {
-            const inMemoryPlugin: Plugin = {
-                name: 'in-memory-plugin',
-                setup(build) {
-                     build.onResolve({ filter: /^\.\/.*/ }, args => {
-                        const path = args.path.startsWith('./') ? args.path.substring(2) : args.path;
-                        const resolvedPath = new URL(path, `file:///${args.importer}`).pathname.slice(1);
-                        return { path: resolvedPath, namespace: 'in-memory' };
-                    });
-                    
-                    build.onLoad({ filter: /.*/, namespace: 'in-memory' }, args => {
-                        let path = args.path;
-                        if (!path.endsWith('.ts') && !path.endsWith('.tsx')) {
-                            path = fileContents[`${path}.tsx`] ? `${path}.tsx` : `${path}.ts`;
-                        }
-
-                        let content = fileContents[path];
-                        if (content === undefined) {
-                            return { errors: [{ text: `File not found: ${path}` }] };
-                        }
-                        const loader = path.endsWith('.tsx') ? 'tsx' : 'ts';
-                        return { contents: content, loader };
-                    });
-                }
-            };
-            
-            const result = await esbuild.build({
-                entryPoints: ['index.tsx'],
-                bundle: true,
-                write: false,
-                plugins: [inMemoryPlugin],
-                jsx: 'automatic',
-                loader: { '.ts': 'ts', '.tsx': 'tsx' },
-                target: 'es2020',
-                format: 'iife',
-                globalName: 'app',
-                external: ['react', 'react-dom', 'qrcode.react', 'html5-qrcode'],
-            });
-            
-            const bundledJs = result.outputFiles[0].text;
-            
-            const finalHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Attendance</title>
-    <link rel="icon" href="https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png" type="image/png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>if (typeof global === 'undefined') { var global = window; }</script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <style>
-      @media screen { #print-root { display: none; } }
-      @media print {
-        @page { size: A4; margin: 1cm; }
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body > #root { display: none; }
-        #print-root { display: block; }
-        .id-card-print-container { display: flex; flex-wrap: wrap; gap: 5mm; justify-content: flex-start; }
-        .id-card-print-wrapper { width: 54mm; height: 85.6mm; border: 1px dashed #ccc; page-break-inside: avoid; overflow: hidden; }
-      }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-    <div id="print-root"></div>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossOrigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossOrigin></script>
-    <script>var QRCode = { default: window.QRCode };</script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode.react@3.1.0/dist/qrcode.react.min.js"></script>
-    <script>
-      window.React = React;
-      window.ReactDOM = ReactDOM;
-      window.QRCodeReact = QRCode.default;
-      window.Html5Qrcode = Html5Qrcode;
-    </script>
-    <script src="bundle.js" defer></script>
-</body>
-</html>`;
-
-            setGeneratedCode({ html: finalHtml, js: bundledJs, htaccess: HTACCESS_CODE });
-
-        } catch (e) {
-            console.error(e);
-            setError(`Build failed: ${e instanceof Error ? e.message : 'An unknown error occurred'}`);
-        } finally {
-            setIsBuilding(false);
-        }
-    };
-
-    return (
-        <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
-            <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">Export Static Website</h3>
-            
-            {!generatedCode ? (
-                <>
-                    <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4" role="alert">
-                        <p className="font-bold">Deploy Anywhere</p>
-                        <p className="mt-1">
-                            Click the button below to generate the code for a standalone version of this application.
-                            You can then upload these files directly to any static web host (like Hostinger's shared hosting) using FTP, without needing Node.js or a VPS.
-                        </p>
-                    </div>
-
-                    <div className="flex justify-center items-center py-4">
-                        <button
-                            onClick={handleGenerate}
-                            disabled={isBuilding || !esbuildInitialized.current}
-                            className="inline-flex items-center justify-center gap-3 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-indigo-500 disabled:cursor-wait transition-all"
-                        >
-                            {isBuilding ? (
-                                <><SpinnerIcon className="w-5 h-5" /> Building...</>
-                            ) : (
-                                <><DownloadIcon className="w-6 h-6" /> Generate Static Code</>
-                            )}
-                        </button>
-                    </div>
-                    {error && <p className="mt-2 text-sm text-red-600 text-center bg-red-50 p-3 rounded-md">{error}</p>}
-                </>
-            ) : (
-                <div className="space-y-8">
-                    <div className="bg-green-100 border-l-4 border-green-500 text-green-800 p-4" role="alert">
-                         <p className="font-bold">Code Generated Successfully!</p>
-                         <p className="mt-1">Follow the steps below to deploy your website.</p>
-                    </div>
-
-                    <div>
-                        <h4 className="text-lg font-bold text-slate-800 mb-2">Deployment Instructions (FTP)</h4>
-                        <ol className="list-decimal list-inside space-y-2 text-slate-700 text-sm">
-                            <li>Open your FTP client (like FileZilla) and connect to your web host.</li>
-                            <li>Navigate to the directory where your website should be, usually <code>public_html</code> or <code>www</code>.</li>
-                            <li>Create a new file named <strong>index.html</strong>. Copy the code from the first box below and paste it into this new file. Save it.</li>
-                            <li>Create another new file named <strong>bundle.js</strong>. Copy the code from the second box and paste it into this file. Save it.</li>
-                            <li>Create one more file named <strong>.htaccess</strong> (the dot at the beginning is important). Copy the code from the third box and paste it in. Save it.</li>
-                            <li>That's it! Your QR Attendance application should now be live at your domain.</li>
-                        </ol>
-                    </div>
-
-                    <CodeBlock 
-                        title="1. index.html" 
-                        code={generatedCode.html}
-                        instructions="Create a file named <code>index.html</code> and paste this content."
-                    />
-                    <CodeBlock 
-                        title="2. bundle.js" 
-                        code={generatedCode.js}
-                        instructions="Create a file named <code>bundle.js</code> in the same directory and paste this content."
-                    />
-                    <CodeBlock 
-                        title="3. .htaccess" 
-                        code={generatedCode.htaccess}
-                        instructions="Create a file named <code>.htaccess</code> in the same directory. This helps with security and proper routing."
-                    />
-                </div>
-            )}
-        </div>
-    );
-};
-
-export default StaticSiteDownloader;
+    const formatSection =
