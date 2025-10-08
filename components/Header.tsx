@@ -8,10 +8,14 @@ interface HeaderProps {
     onNavigate: (view: string) => void;
 }
 
+const SUPERUSER_EMAIL = 'ponsri.big.gan.nav@gmail.com';
+const SUPERUSER_AVATAR = 'https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png';
+
 const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    const isSuperUser = currentUser.email === SUPERUSER_EMAIL;
     const userInitial = currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?';
 
     useEffect(() => {
@@ -25,6 +29,13 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    const renderAvatar = () => {
+        if (isSuperUser) {
+            return <img src={SUPERUSER_AVATAR} alt="Admin Logo" className="w-full h-full object-cover" />;
+        }
+        return <span className="font-bold text-sm text-white">{userInitial}</span>;
+    };
 
     return (
         <header className="bg-white shadow-md sticky top-0 z-20">
@@ -60,8 +71,8 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 rounded-full hover:bg-slate-100 p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                             >
-                                <div className="w-9 h-9 bg-indigo-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                    {userInitial}
+                                <div className="w-9 h-9 bg-indigo-700 rounded-full flex items-center justify-center overflow-hidden">
+                                    {renderAvatar()}
                                 </div>
                                 <ChevronDownIcon className="w-5 h-5 text-slate-500" />
                             </button>

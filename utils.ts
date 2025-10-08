@@ -9,16 +9,16 @@ export const formatClassName = (className: string | undefined | null): string =>
     
     const parts = className.split('=>').map(p => p.trim());
     
-    if (parts.length >= 3 && parts[0] && parts[1]) {
-        // Format: 8=>A=>SOCIAL SCIENCE-089  ->  Class 8-A: SOCIAL SCIENCE-089
-        return `Class ${parts[0]}-${parts[1]}: ${parts.slice(2).join(' ')}`;
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+        // Format: 8=>A=>SUBJECT  ->  Class 8-A
+        return `Class ${parts[0]}-${parts[1]}`;
     }
     
-    if (parts.length === 2 && parts[0]) {
-       // Format: 8=>SOCIAL SCIENCE -> Class 8: SOCIAL SCIENCE
-       return `Class ${parts[0]}: ${parts[1]}`;
+    if (parts.length === 1 && parts[0]) {
+       // Format: 8 -> Class 8
+       return `Class ${parts[0]}`;
     }
 
     // Fallback for any other format
-    return className;
+    return className.split('=>')[0] || 'N/A';
 };

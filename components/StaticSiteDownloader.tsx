@@ -509,18 +509,18 @@ export const formatClassName = (className: string | undefined | null): string =>
     
     const parts = className.split('=>').map(p => p.trim());
     
-    if (parts.length >= 3 && parts[0] && parts[1]) {
-        // Format: 8=>A=>SOCIAL SCIENCE-089  ->  Class 8-A: SOCIAL SCIENCE-089
-        return \`Class \${parts[0]}-\${parts[1]}: \${parts.slice(2).join(' ')}\`;
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+        // Format: 8=>A=>SUBJECT  ->  Class 8-A
+        return \`Class \${parts[0]}-\${parts[1]}\`;
     }
     
-    if (parts.length === 2 && parts[0]) {
-       // Format: 8=>SOCIAL SCIENCE -> Class 8: SOCIAL SCIENCE
-       return \`Class \${parts[0]}: \${parts[1]}\`;
+    if (parts.length === 1 && parts[0]) {
+       // Format: 8 -> Class 8
+       return \`Class \${parts[0]}\`;
     }
 
     // Fallback for any other format
-    return className;
+    return className.split('=>')[0] || 'N/A';
 };
 `,
   'components/icons.tsx': `
@@ -903,8 +903,8 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/qr-attendance-plugin.php';
-const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/.htaccess';
+const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/school_management_plugin/main/school-management/school-management.php';
+const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/school_management_plugin/main/.htaccess';
 
 const WordPressPluginCode = ({ code, version, isLoading, error }: { code: string, version: string, isLoading: boolean, error: string | null }) => {
     const [copyText, setCopyText] = useState('Copy Code');
@@ -1430,7 +1430,7 @@ import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Student, Teacher } from '../types';
 import { formatClassName } from '../utils';
-import { SchoolLogo, UserIcon } from './icons';
+import { UserIcon } from './icons';
 
 interface IdCardProps {
     person: Student | Teacher;
@@ -1438,11 +1438,12 @@ interface IdCardProps {
 }
 
 const DetailRow = ({ label, value }: { label: string, value: string | undefined }) => (
-    <div className="flex text-xs">
-        <p className="w-2/5 font-semibold text-slate-600">{label}</p>
-        <p className="w-3/5 text-slate-800 break-words"><span className="mr-1">:</span>{value || 'N/A'}</p>
-    </div>
+    <tr className="border-b border-slate-200">
+        <td className="py-1 pr-2 font-semibold text-slate-600">{label}</td>
+        <td className="py-1 text-slate-800 break-words">{value || 'N/A'}</td>
+    </tr>
 );
+
 
 const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
     let name: string, id: string, photoUrl: string | undefined, details: React.ReactNode;
@@ -1453,11 +1454,14 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
         id = s.studentId;
         photoUrl = s.profilePhotoUrl;
         details = (
-            <>
-                <DetailRow label="Class" value={formatClassName(s.class)} />
-                <DetailRow label="Roll No" value={s.rollNumber} />
-                <DetailRow label="Contact" value={s.contactNumber} />
-            </>
+            <table className="w-full text-left text-xs">
+                <tbody>
+                    <DetailRow label="Admission No." value={s.studentId} />
+                    <DetailRow label="Class" value={formatClassName(s.class)} />
+                    <DetailRow label="Roll No." value={s.rollNumber} />
+                    <DetailRow label="Mobile" value={s.contactNumber} />
+                </tbody>
+            </table>
         );
     } else {
         const t = person as Teacher;
@@ -1465,11 +1469,14 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
         id = t.id;
         photoUrl = t.profilePhotoUrl;
         details = (
-            <>
-                <DetailRow label="Role" value={t.role} />
-                <DetailRow label="Phone" value={t.phone} />
-                <DetailRow label="Email" value={t.email} />
-            </>
+            <table className="w-full text-left text-xs">
+                <tbody>
+                    <DetailRow label="Teacher ID" value={t.id} />
+                    <DetailRow label="Role" value={t.role} />
+                    <DetailRow label="Mobile" value={t.phone} />
+                    <DetailRow label="Email" value={t.email} />
+                </tbody>
+            </table>
         );
     }
 
@@ -1477,28 +1484,41 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
     const securePhotoUrl = photoUrl?.replace(/^http:\\/\\//i, 'https://');
 
     return (
-        <div className="bg-white w-full h-full flex flex-col font-sans border border-slate-200 overflow-hidden">
-            <header className="flex flex-col items-center p-2 bg-indigo-800 text-white text-center">
-                 <img src="https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png" alt="Ponsri School Logo" className="w-10 h-10 bg-white rounded-full p-0.5" />
-                <h2 className="text-xs font-bold leading-tight mt-1">PM SHRI PRATHMIK VIDHYAMANDIR</h2>
-                <p className="text-[10px] leading-tight">PONSRI, Ta. Una, Dist. Gir Somnath</p>
+        <div className="bg-white w-full h-full flex flex-col font-sans border border-slate-300 overflow-hidden">
+            {/* Header */}
+            <header className="flex items-center gap-2 p-1.5 bg-sky-500 text-white">
+                 <img src="https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png" alt="Ponsri School Logo" className="w-10 h-10 bg-white rounded-md p-0.5" />
+                 <div className="text-center flex-grow">
+                    <h2 className="text-xs font-bold leading-tight">PM SHRI PRATHMIK VIDHYAMANDIR</h2>
+                    <p className="text-[9px] leading-tight">PONSRI, Ta. Una, Dist. Gir Somnath</p>
+                 </div>
             </header>
-            <main className="flex-grow flex flex-col items-center p-3 text-center">
-                <div className="w-24 h-24 mt-2 border-4 border-indigo-200 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+
+            {/* Body */}
+            <main className="flex-grow p-2 flex flex-col items-center">
+                <div className="w-20 h-20 mt-1 border-2 border-sky-300 p-0.5 rounded-md bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {securePhotoUrl ? 
                         <img src={securePhotoUrl} alt={name} className="w-full h-full object-cover" /> : 
                         <UserIcon className="w-16 h-16 text-slate-400" />
                     }
                 </div>
-                <h3 className="mt-3 text-lg font-extrabold text-indigo-900 uppercase tracking-wide">{name}</h3>
-                <p className="text-sm font-semibold text-slate-600 -mt-1">{type === 'student' ? 'Student' : (person as Teacher).role}</p>
-                <div className="text-left w-full mt-4 space-y-1.5 px-2">
+                
+                <h3 className="mt-2 text-base font-bold text-slate-800 uppercase">{name}</h3>
+                
+                <div className="w-full mt-2 text-sm">
                     {details}
                 </div>
             </main>
-            <footer className="flex flex-col items-center justify-center p-2 bg-indigo-800 text-white">
-                <QRCodeSVG value={qrValue} size={50} level={"H"} bgColor="#FFFFFF" fgColor="#000000" />
-                <p className="text-[10px] font-mono mt-1">{id}</p>
+
+            {/* Footer */}
+            <footer className="flex items-center justify-between p-1.5 bg-sky-500 text-white mt-auto">
+                <div className="flex flex-col items-center">
+                    <QRCodeSVG value={qrValue} size={40} level={"H"} bgColor="#FFFFFF" fgColor="#000000" className="rounded-sm" />
+                    <p className="text-[8px] font-mono mt-0.5">{id}</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-xs font-bold">Principal's Signature</p>
+                </div>
             </footer>
         </div>
     );
