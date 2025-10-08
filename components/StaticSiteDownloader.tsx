@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
-import esbuild, { type Plugin } from 'esbuild-wasm';
+// FIX: Changed import to default import for runtime API, and named type import for Plugin type.
+// This resolves the "esbuild.initialize is not a function" runtime error.
+import esbuild from 'esbuild-wasm';
+import type { Plugin } from 'esbuild-wasm';
 import { DownloadIcon, SpinnerIcon } from './icons';
 
 // This object contains the entire source code of the application.
@@ -70,8 +73,11 @@ import DataViewer from './components/DataViewer';
 import Settings from './components/Settings';
 import Login from './components/Login';
 import ScanSuccessModal from './components/ScanSuccessModal';
-import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SchoolLogo, SettingsIcon, SpinnerIcon, LogoutIcon } from './components/icons';
+import Header from './components/Header';
+import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon } from './components/icons';
 
+// NOTE: The 'export_website' view is intentionally removed from the static build
+// as it is a development-only feature.
 type View = 'student_attendance' | 'teacher_attendance' | 'data_viewer' | 'settings';
 
 const App: React.FC = () => {
@@ -84,22 +90,17 @@ const App: React.FC = () => {
     const [view, setView] = useState<View>('student_attendance');
     const [syncError, setSyncError] = useState<string | null>(null);
 
-    // Data state
     const [students, setStudents] = useState<Student[]>([]);
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [studentMap, setStudentMap] = useState<Map<string, Student>>(new Map());
 
-    // Student attendance state
     const [isScanning, setIsScanning] = useState(false);
     const [lastScannedInfo, setLastScannedInfo] = useState<{ student: Student, time: Date } | null>(null);
     const [scanError, setScanError] = useState<string | null>(null);
     const [attendanceRecords, setAttendanceRecords] = useState<StudentAttendanceRecord[]>([]);
     
-    // Teacher attendance state
     const [teacherAttendance, setTeacherAttendance] = useState<Map<string, { status: AttendanceStatus; comment: string }>>(new Map());
 
-
-    // Effects
     useEffect(() => {
         if (currentUser && secretKey) {
             handleSync(secretKey);
@@ -227,16 +228,7 @@ const App: React.FC = () => {
     if (!secretKey) {
         return (
              <div className="min-h-screen bg-slate-100 font-sans">
-                 <header className="bg-white shadow-md">
-                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                         <div className="flex justify-between items-center h-16">
-                             <div className="flex items-center gap-4">
-                                 <SchoolLogo className="h-12"/>
-                                 <h1 className="text-xl font-bold text-slate-800">Attendance Portal Setup</h1>
-                             </div>
-                         </div>
-                     </div>
-                 </header>
+                 <Header currentUser={currentUser} onLogout={()=>{}} onNavigate={()=>{}}/>
                  <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                     <Settings onSaveKey={handleSaveKey} initialSetup={true} currentUser={currentUser} />
                  </main>
@@ -250,7 +242,7 @@ const App: React.FC = () => {
                 return (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                         <div className="space-y-6">
-                            <div className="p-6 bg-white rounded-lg shadow-md">
+                            <div className="p-6 bg-white rounded-lg shadow-lg">
                                 <h3 className="text-lg font-semibold text-slate-800 mb-4">QR Code Scanner</h3>
                                 <button
                                     onClick={() => setIsScanning(!isScanning)}
@@ -286,27 +278,11 @@ const App: React.FC = () => {
                     onClose={() => setLastScannedInfo(null)}
                 />
             )}
-            <header className="bg-white shadow-md sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <div className="flex items-center gap-4">
-                            <SchoolLogo className="h-12"/>
-                            <h1 className="text-xl font-bold text-slate-800">Attendance Portal</h1>
-                        </div>
-                         <button
-                            onClick={handleLogout}
-                            className="inline-flex items-center gap-2 px-3 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
-                        >
-                            <LogoutIcon className="w-5 h-5" />
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <Header currentUser={currentUser} onLogout={handleLogout} onNavigate={(view) => setView(view as View)} />
 
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 {syncError && (
-                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow" role="alert">
                         <p className="font-bold">Data Sync Error</p>
                         <p>{syncError}</p>
                     </div>
@@ -361,7 +337,6 @@ const App: React.FC = () => {
                         </div>
                     </div>
                 </div>
-
                 {renderView()}
             </main>
         </div>
@@ -522,6 +497,32 @@ export const uploadTeacherAttendance = async (records: TeacherAttendanceRecord[]
   'config.ts': `
 export const API_BASE_URL = 'https://ponsrischool.in/wp-json/custom-sync/v1';
 `,
+ 'utils.ts': `
+/**
+ * Formats a class name string from the format 'CLASS=>SECTION=>SUBJECT'
+ * into a more readable format.
+ * @param className The raw class name string from the API.
+ * @returns A formatted, human-readable class name.
+ */
+export const formatClassName = (className: string | undefined | null): string => {
+    if (!className || className.toLowerCase() === 'null') return 'N/A';
+    
+    const parts = className.split('=>').map(p => p.trim());
+    
+    if (parts.length >= 3 && parts[0] && parts[1]) {
+        // Format: 8=>A=>SOCIAL SCIENCE-089  ->  Class 8-A: SOCIAL SCIENCE-089
+        return \`Class \${parts[0]}-\${parts[1]}: \${parts.slice(2).join(' ')}\`;
+    }
+    
+    if (parts.length === 2 && parts[0]) {
+       // Format: 8=>SOCIAL SCIENCE -> Class 8: SOCIAL SCIENCE
+       return \`Class \${parts[0]}: \${parts[1]}\`;
+    }
+
+    // Fallback for any other format
+    return className;
+};
+`,
   'components/icons.tsx': `
 import React from 'react';
 
@@ -551,15 +552,10 @@ export const ExclamationCircleIcon = ({ className }: { className?: string }) => 
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
-export const UploadIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-    </svg>
-);
-export const LogoutIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-    </svg>
+export const DownloadIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+  </svg>
 );
 export const SyncIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -596,14 +592,34 @@ export const SettingsIcon = ({ className }: { className?: string }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
 );
-export const KeyIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.629 5.629l-2.371 2.371a2.121 2.121 0 01-3 0l-1.371-1.371a2.121 2.121 0 010-3l2.371-2.371A6 6 0 0121 11zM12 11a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-);
 export const ClipboardIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+);
+export const CloudDownloadIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+    </svg>
+);
+export const BellIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+);
+export const PowerIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
+    </svg>
+);
+export const ChevronDownIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+);
+export const InformationCircleIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 `,
@@ -656,38 +672,48 @@ interface AttendanceListProps {
 }
 
 const AttendanceList: React.FC<AttendanceListProps> = ({ records }) => {
-    if (records.length === 0) {
-        return (
-            <div className="text-center text-slate-500 py-8">
-                <p>No students marked present yet.</p>
-                <p>Start the scanner to begin taking attendance.</p>
-            </div>
-        );
-    }
-
     return (
-        <div className="w-full bg-white rounded-lg shadow-md">
-            <div className="p-4 border-b border-slate-200">
+        <div className="w-full bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-slate-200">
                 <h3 className="text-lg font-semibold text-slate-800">Attendance Log ({records.length})</h3>
             </div>
-            <div className="max-h-96 overflow-y-auto">
-                <ul className="divide-y divide-slate-200">
-                    {records.map((record) => (
-                        <li key={record.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center space-x-4">
-                                <CheckCircleIcon className="w-6 h-6 text-green-500" />
-                                <div>
-                                    <p className="font-medium text-slate-900">{record.name}</p>
-                                    <p className="text-sm text-slate-500">ID: {record.id}</p>
-                                </div>
-                            </div>
-                            <p className="text-sm text-slate-600">
-                                {record.timestamp.toLocaleTimeString()}
-                            </p>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+             {records.length === 0 ? (
+                <div className="text-center text-slate-500 py-16 px-6">
+                    <p className="font-semibold">No students marked present yet.</p>
+                    <p className="text-sm mt-1">Start the scanner to begin taking attendance.</p>
+                </div>
+            ) : (
+                <div className="max-h-[28rem] overflow-y-auto">
+                    <table className="min-w-full">
+                        <thead className="bg-slate-50 sticky top-0">
+                            <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                            {records.map((record) => (
+                                <tr key={record.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                <CheckCircleIcon className="w-6 h-6 text-green-600" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-slate-900">{record.name}</div>
+                                                <div className="text-xs text-slate-500">ID: {record.id}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                        {record.timestamp.toLocaleTimeString()}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };
@@ -713,7 +739,7 @@ const DataControls: React.FC<DataControlsProps> = ({ onSync }) => {
     };
 
     return (
-        <div className="w-full p-6 bg-white rounded-lg shadow-md space-y-6">
+        <div className="w-full p-6 bg-white rounded-lg shadow-lg space-y-6">
             <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">Data Management</h3>
             
             <div className="space-y-2">
@@ -722,7 +748,7 @@ const DataControls: React.FC<DataControlsProps> = ({ onSync }) => {
                     <button
                         onClick={handleSync}
                         disabled={isSyncing}
-                        className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:bg-slate-100 disabled:cursor-wait transition-colors"
+                        className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-slate-100 disabled:cursor-wait transition-colors"
                     >
                         {isSyncing ? (
                             <><SpinnerIcon className="w-5 h-5 mr-2" /> Syncing...</>
@@ -791,7 +817,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
     const statuses: AttendanceStatus[] = ['Present', 'Absent', 'Late', 'Half Day'];
 
     return (
-        <div className="bg-white rounded-lg shadow-md">
+        <div className="bg-white rounded-lg shadow-lg">
             <div className="p-4 border-b space-y-4 md:flex md:items-center md:justify-between md:space-y-0">
                 <h2 className="text-xl font-semibold text-slate-800">Manual Teacher Attendance</h2>
                 <div className="flex items-center gap-4">
@@ -799,12 +825,12 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm"
+                        className="px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                     />
                     <button
                         onClick={handleSubmit}
                         disabled={teachers.length === 0 || isSubmitting}
-                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:bg-indigo-500 disabled:cursor-wait"
+                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-indigo-500 disabled:cursor-wait"
                     >
                         {isSubmitting ? <><SpinnerIcon className="w-5 h-5 mr-2" />Submitting...</> : 'Submit'}
                     </button>
@@ -837,7 +863,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                                             name={\`attendance-\${teacher.id}\`}
                                             value={teacherAttendance.status}
                                             onChange={(e) => handleStatusChange(teacher.id, e.target.value as AttendanceStatus)}
-                                            className="w-full p-1 border-slate-300 rounded-md shadow-sm focus:ring-indigo-700 focus:border-indigo-700"
+                                            className="w-full p-1 border-slate-300 rounded-md shadow-sm focus:ring-indigo-600 focus:border-indigo-600"
                                         >
                                             {statuses.map(status => (
                                                 <option key={status} value={status}>{status}</option>
@@ -849,7 +875,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                                             type="text"
                                             value={teacherAttendance.comment}
                                             onChange={(e) => handleCommentChange(teacher.id, e.target.value)}
-                                            className="w-full max-w-xs px-2 py-1 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm"
+                                            className="w-full max-w-xs px-2 py-1 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                                         />
                                     </td>
                                 </tr>
@@ -863,202 +889,11 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
 };
 export default TeacherAttendance;
 `,
-'components/DataViewer.tsx': `
-import React, { useState, useMemo, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import type { Student, Teacher } from '../types';
-import PrintableView from './PrintableView';
-import { UserIcon, UsersIcon, IdentificationIcon } from './icons';
-
-interface DataViewerProps {
-    students: Student[];
-    teachers: Teacher[];
-}
-
-const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
-    const [view, setView] = useState<'students' | 'teachers'>('students');
-    const [selectedPrintClass, setSelectedPrintClass] = useState<string>('all');
-    const filteredStudents = useMemo(() => students.filter(s => s.class && s.class.trim() !== '' && s.class.toLowerCase() !== 'null'), [students]);
-    const handlePrint = () => {
-        setTimeout(() => {
-            window.print();
-        }, 100);
-    };
-    const printRoot = document.getElementById('print-root');
-    const groupedStudents = useMemo((): Record<string, Student[]> | null => {
-        if (view !== 'students') return null;
-        const groups = filteredStudents.reduce((acc, student) => {
-            const groupKey = \`\${student.class}\${student.section ? \` - \${student.section}\` : ''}\`;
-            if (!acc[groupKey]) {
-                acc[groupKey] = [];
-            }
-            acc[groupKey].push(student);
-            return acc;
-        }, {} as Record<string, Student[]>);
-        return Object.fromEntries(Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))) as Record<string, Student[]>;
-    }, [filteredStudents, view]);
-
-    useEffect(() => {
-        setSelectedPrintClass('all');
-    }, [view]);
-
-    const peopleToPrint = useMemo(() => {
-        if (view === 'teachers') {
-            return teachers;
-        }
-        if (selectedPrintClass === 'all') {
-            return filteredStudents;
-        }
-        return groupedStudents?.[selectedPrintClass] || [];
-    }, [view, selectedPrintClass, filteredStudents, groupedStudents, teachers]);
-    const type = view === 'students' ? 'student' : 'teacher';
-    const tableHeaders = view === 'students'
-        ? ['Photo', 'ID', 'Name', 'Class', 'Roll No.', 'Contact']
-        : ['Photo', 'ID', 'Name', 'Role', 'Email', 'Phone'];
-
-    const renderTableRow = (person: Student | Teacher) => {
-        const securePhotoUrl = person.profilePhotoUrl?.replace(/^http:\\/\\//i, 'https://');
-        const photoCell = (
-             <td className="px-6 py-2">
-                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden ring-2 ring-slate-100">
-                    {securePhotoUrl ? <img src={securePhotoUrl} alt={type === 'student' ? (person as Student).studentName : (person as Teacher).name} className="w-full h-full object-contain" /> : <UserIcon className="w-6 h-6 text-slate-400" />}
-                </div>
-            </td>
-        );
-
-        if (view === 'students' && 'studentId' in person) {
-            const student = person as Student;
-            return (
-                <tr key={student.studentId}>
-                    {photoCell}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.studentId}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{student.studentName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{(student.class || 'N/A')}{student.section ? \`-\${student.section}\` : ''}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.rollNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.contactNumber}</td>
-                </tr>
-            );
-        }
-        if (view === 'teachers' && 'id' in person) {
-            const teacher = person as Teacher;
-            return (
-                <tr key={teacher.id}>
-                    {photoCell}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{teacher.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{teacher.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{teacher.role}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{teacher.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{teacher.phone}</td>
-                </tr>
-            );
-        }
-        return null;
-    };
-
-    return (
-        <div className="bg-white rounded-lg shadow-md">
-            <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-4">
-                     <div className="sm:hidden">
-                        <select
-                            id="tabs-mobile"
-                            name="tabs-mobile"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm rounded-md"
-                            onChange={(e) => setView(e.target.value as 'students' | 'teachers')}
-                            value={view}
-                        >
-                            <option value="students">Students</option>
-                            <option value="teachers">Teachers</option>
-                        </select>
-                    </div>
-                    <div className="hidden sm:block">
-                        <nav className="flex space-x-4" aria-label="Tabs">
-                             <button onClick={() => setView('students')} className={\`px-3 py-2 font-medium text-sm rounded-md flex items-center gap-2 \${view === 'students' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:text-slate-700'}\`}>
-                                <UsersIcon className="w-5 h-5" /> Students ({filteredStudents.length})
-                            </button>
-                             <button onClick={() => setView('teachers')} className={\`px-3 py-2 font-medium text-sm rounded-md flex items-center gap-2 \${view === 'teachers' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:text-slate-700'}\`}>
-                                <UserIcon className="w-5 h-5" /> Teachers ({teachers.length})
-                            </button>
-                        </nav>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {view === 'students' && groupedStudents && (
-                        <select
-                            value={selectedPrintClass}
-                            onChange={(e) => setSelectedPrintClass(e.target.value)}
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm rounded-md"
-                        >
-                            <option value="all">Print All Classes</option>
-                            {Object.keys(groupedStudents).map(className => (
-                                <option key={className} value={className}>{\`Print \${className}\`}</option>
-                            ))}
-                        </select>
-                    )}
-                    <button
-                        onClick={handlePrint}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 flex-shrink-0"
-                    >
-                        <IdentificationIcon className="w-5 h-5" />
-                        Print ID Cards
-                    </button>
-                </div>
-            </div>
-            <div className="overflow-x-auto max-h-[32rem]">
-                <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50 sticky top-0 z-10">
-                        <tr>
-                            {tableHeaders.map(header => (
-                                <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                    {header}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
-                       {view === 'students' ? (
-                            groupedStudents && Object.keys(groupedStudents).length > 0 ? (
-                                Object.keys(groupedStudents).map(groupName => {
-                                    const studentsInGroup = groupedStudents[groupName];
-                                    return (
-                                        <React.Fragment key={groupName}>
-                                            <tr className="bg-slate-100">
-                                                <th colSpan={tableHeaders.length} className="px-6 py-2 text-left text-sm font-semibold text-slate-700 sticky top-12 bg-slate-100">
-                                                    {groupName}
-                                                </th>
-                                            </tr>
-                                            {studentsInGroup.map(student => renderTableRow(student))}
-                                        </React.Fragment>
-                                    );
-                                })
-                            ) : (
-                                <tr><td colSpan={tableHeaders.length} className="text-center text-slate-500 py-8">No student data available.</td></tr>
-                            )
-                        ) : (
-                            teachers.length > 0 ? (
-                                teachers.map(teacher => renderTableRow(teacher))
-                            ) : (
-                                <tr><td colSpan={tableHeaders.length} className="text-center text-slate-500 py-8">No teacher data available.</td></tr>
-                            )
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {printRoot && ReactDOM.createPortal(
-                <PrintableView people={peopleToPrint} type={type} />,
-                printRoot
-            )}
-        </div>
-    );
-};
-export default DataViewer;
-`,
 'components/Settings.tsx': `
 import React, { useState, useEffect } from 'react';
 import { getUsers, addUser, deleteUser } from '../api';
 import type { User } from '../types';
-import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon } from './icons';
+import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon, CloudDownloadIcon, ExclamationCircleIcon, CheckCircleIcon } from './icons';
 
 interface SettingsProps {
     onSaveKey: (key: string) => void;
@@ -1068,191 +903,15 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const PHP_CODE = \`<?php
-/*
-Plugin Name: Custom Data Sync for QR Attendance App
-Description: Provides a secure REST API endpoint to sync student and teacher data for the QR attendance app.
-Version: 1.7
-Author: QR App Support
-*/
+const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/qr-attendance-plugin.php';
+const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/.htaccess';
 
-// Prevent direct access
-if (!defined('ABSPATH')) {
-    exit;
-}
-
-add_filter( 'rest_allowed_cors_headers', function( $allowed_headers ) {
-    $allowed_headers[] = 'x-sync-key';
-    return $allowed_headers;
-} );
-
-add_action('rest_api_init', function () {
-    register_rest_route('custom-sync/v1', '/data', array(
-        'methods' => 'GET',
-        'callback' => 'sync_app_data',
-        'permission_callback' => 'sync_permission_check',
-    ));
-    register_rest_route('custom-sync/v1', '/attendance', array(
-        'methods' => 'POST',
-        'callback' => 'receive_attendance_data',
-        'permission_callback' => 'sync_permission_check',
-    ));
-});
-
-if (!function_exists('sync_permission_check')) {
-    function sync_permission_check($request) {
-        $secret_key = $request->get_header('X-Sync-Key');
-        $stored_key = get_option('qr_app_secret_key', ''); 
-        if (empty($stored_key) || empty($secret_key) || !hash_equals($stored_key, $secret_key)) {
-            return new WP_Error('rest_forbidden', 'Invalid or missing secret key.', array('status' => 401));
-        }
-        return true;
-    }
-}
-
-if (!function_exists('get_custom_user_photo_url')) {
-    function get_custom_user_photo_url($user_id) {
-        $avatar_meta = get_user_meta($user_id, 'smgt_user_avatar', true);
-        if (!empty($avatar_meta)) {
-            if (is_numeric($avatar_meta)) {
-                $image_url = wp_get_attachment_image_url($avatar_meta, 'full');
-                if ($image_url) {
-                    return $image_url;
-                }
-            }
-            elseif (filter_var($avatar_meta, FILTER_VALIDATE_URL)) {
-                return $avatar_meta;
-            }
-        }
-        return get_avatar_url($user_id);
-    }
-}
-
-if (!function_exists('sync_app_data')) {
-    function sync_app_data($request) {
-        $response_data = array(
-            'students' => array(),
-            'teachers' => array(),
-        );
-
-        $student_users = get_users(array('role' => 'student'));
-        foreach ($student_users as $user) {
-            $student_data = array(
-                'studentId'     => (string)$user->ID,
-                'studentName'   => $user->display_name,
-                'class'         => get_user_meta($user->ID, 'class_name', true),
-                'section'       => get_user_meta($user->ID, 'class_section', true),
-                'rollNumber'    => get_user_meta($user->ID, 'roll_id', true),
-                'contactNumber' => get_user_meta($user->ID, 'mobile', true),
-                'profilePhotoUrl' => get_custom_user_photo_url($user->ID),
-            );
-            $response_data['students'][] = $student_data;
-        }
-
-        $teacher_users = get_users(array('role' => 'teacher'));
-        foreach ($teacher_users as $user) {
-            $teacher_data = array(
-                'id'    => (string)$user->ID,
-                'name'  => $user->display_name,
-                'role'  => 'Teacher',
-                'email' => $user->user_email,
-                'phone' => get_user_meta($user->ID, 'mobile', true),
-                'profilePhotoUrl' => get_custom_user_photo_url($user->ID),
-            );
-            $response_data['teachers'][] = $teacher_data;
-        }
-
-        return new WP_REST_Response($response_data, 200);
-    }
-}
-
-if (!function_exists('receive_attendance_data')) {
-    function receive_attendance_data($request) {
-        global $wpdb;
-        $params = $request->get_json_params();
-        $attendance_table = $wpdb->prefix . 'smgt_attendence';
-
-        if (isset($params['students']) && is_array($params['students'])) {
-            foreach ($params['students'] as $student_record) {
-                 $wpdb->insert(
-                    $attendance_table,
-                    array(
-                        'user_id' => $student_record['id'],
-                        'attendence_date' => (new DateTime($student_record['timestamp']))->format('Y-m-d'),
-                        'status' => 'Present',
-                        'attendence_by' => get_current_user_id() ?: 1,
-                        'role_name' => 'student'
-                    )
-                );
-            }
-        }
-        
-        if (isset($params['teachers']) && is_array($params['teachers'])) {
-            foreach ($params['teachers'] as $teacher_record) {
-                $wpdb->insert($attendance_table, array(
-                    'user_id' => $teacher_record['teacherId'],
-                    'attendence_date' => $teacher_record['date'],
-                    'status' => $teacher_record['status'],
-                    'comment' => $teacher_record['comment'],
-                    'attendence_by' => get_current_user_id() ?: 1,
-                    'role_name' => 'teacher'
-                ));
-            }
-        }
-
-        return new WP_REST_Response(array('success' => true, 'message' => 'Attendance recorded.'), 200);
-    }
-}
-
-add_action('admin_menu', function() {
-    add_options_page('QR App Sync Settings', 'QR App Sync', 'manage_options', 'qr-app-sync', 'qr_app_settings_page_html');
-});
-
-if (!function_exists('qr_app_settings_page_html')) {
-    function qr_app_settings_page_html() {
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-        if (isset($_GET['settings-updated'])) {
-            add_settings_error('qr_app_messages', 'qr_app_message', __('Settings Saved', 'qr-app-sync'), 'updated');
-        }
-        settings_errors('qr_app_messages');
-        ?>
-        <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-            <p>Use this page to set the secret API key required for the QR Attendance App to sync data.</p>
-            <form action="options.php" method="post">
-                <?php
-                settings_fields('qr-app-sync');
-                do_settings_sections('qr-app-sync');
-                submit_button('Save Settings');
-                ?>
-            </form>
-        </div>
-        <?php
-    }
-}
-
-add_action('admin_init', function() {
-    register_setting('qr-app-sync', 'qr_app_secret_key');
-    add_settings_section('qr_app_section_developers', __('API Settings', 'qr-app-sync'), null, 'qr-app-sync');
-    add_settings_field('qr_app_secret_key', __('Secret Key', 'qr-app-sync'), 'qr_app_secret_key_callback', 'qr-app-sync', 'qr_app_section_developers');
-});
-
-if (!function_exists('qr_app_secret_key_callback')) {
-    function qr_app_secret_key_callback() {
-        $option = get_option('qr_app_secret_key');
-        echo '<input type="text" id="qr_app_secret_key" name="qr_app_secret_key" value="' . esc_attr($option) . '" size="50" />';
-        echo '<p class="description">Enter a strong, unique secret key for the app to use. This must match the key entered in the app.</p>';
-    }
-}
-?>\`;
-
-const WordPressPluginCode = () => {
+const WordPressPluginCode = ({ code, version, isLoading, error }: { code: string, version: string, isLoading: boolean, error: string | null }) => {
     const [copyText, setCopyText] = useState('Copy Code');
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(PHP_CODE).then(() => {
+        if (!code) return;
+        navigator.clipboard.writeText(code).then(() => {
             setCopyText('Copied!');
             setTimeout(() => setCopyText('Copy Code'), 2000);
         }, (err) => {
@@ -1263,14 +922,15 @@ const WordPressPluginCode = () => {
     };
     
     return (
-        <div className="p-6 bg-white rounded-lg shadow-md space-y-6">
+        <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
             <div className="border-b pb-3 flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                    <ClipboardIcon className="w-5 h-5"/> WordPress Plugin Code (v1.7)
+                    <ClipboardIcon className="w-5 h-5"/> WordPress Plugin Code {version && \`(v\${version})\`}
                 </h3>
                 <button
                     onClick={handleCopy}
-                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 transition-all duration-150 ease-in-out"
+                    disabled={isLoading || !!error || !code}
+                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out disabled:bg-slate-50 disabled:cursor-not-allowed"
                 >
                     {copyText}
                 </button>
@@ -1284,32 +944,132 @@ const WordPressPluginCode = () => {
                     <li><strong>Go to Settings:</strong> Navigate to <strong>Settings → QR App Sync</strong> in the left-hand menu.</li>
                     <li><strong>Save Your Key:</strong> Enter the exact same Secret API Key that you use in this application into the "Secret Key" field and click "Save Settings".</li>
                 </ol>
-                <p className="mt-2 text-sm">The plugin reads the key from this WordPress setting; you do not need to edit the PHP code itself.</p>
             </div>
-            <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
-                <code>
-                    {PHP_CODE}
-                </code>
-            </pre>
+            {isLoading ? (
+                 <div className="flex justify-center items-center h-40">
+                    <SpinnerIcon className="w-8 h-8 text-indigo-700" />
+                 </div>
+            ) : error ? (
+                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md font-medium">{error}</div>
+            ) : (
+                <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
+                    <code>
+                        {code}
+                    </code>
+                </pre>
+            )}
         </div>
     );
 };
 
+const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boolean, error: string | null }) => {
+    const [copyText, setCopyText] = useState('Copy Code');
+
+    const handleCopy = () => {
+        if (!code) return;
+        navigator.clipboard.writeText(code).then(() => {
+            setCopyText('Copied!');
+            setTimeout(() => setCopyText('Copy Code'), 2000);
+        });
+    };
+
+    return (
+        <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
+            <div className="border-b pb-3 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    <ClipboardIcon className="w-5 h-5"/> Recommended .htaccess File
+                </h3>
+                <button
+                    onClick={handleCopy}
+                    disabled={isLoading || !!error || !code}
+                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out disabled:bg-slate-50 disabled:cursor-not-allowed"
+                >
+                    {copyText}
+                </button>
+            </div>
+            <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4" role="alert">
+                <p className="font-bold">How to Use This File</p>
+                <p className="mt-1 text-sm">
+                    The <code>.htaccess</code> file is a powerful configuration file for web servers running Apache. Copy the code below and place it in the root directory of your WordPress installation. If a file already exists, you can add these rules to it (usually at the top). These rules help improve security and performance.
+                </p>
+            </div>
+             {isLoading ? (
+                 <div className="flex justify-center items-center h-40">
+                    <SpinnerIcon className="w-8 h-8 text-indigo-700" />
+                 </div>
+            ) : error ? (
+                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md font-medium">{error}</div>
+            ) : (
+                <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
+                    <code>
+                        {code}
+                    </code>
+                </pre>
+            )}
+        </div>
+    );
+};
 
 const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: initialKey, initialSetup = false, currentUser }) => {
     const [secretKey, setSecretKey] = useState(initialKey || '');
     const [isSaving, setIsSaving] = useState(false);
+    
+    const [pluginInfo, setPluginInfo] = useState({ code: '', version: '', error: null as string | null });
+    const [htaccessInfo, setHtaccessInfo] = useState({ code: '', error: null as string | null });
+    const [isLoadingCode, setIsLoadingCode] = useState(true);
+
     const [users, setUsers] = useState<Omit<User, 'password'>[]>([]);
     const [newUserEmail, setNewUserEmail] = useState('');
     const [newUserPassword, setNewUserPassword] = useState('');
     const [isUsersLoading, setIsUsersLoading] = useState(false);
     const [userError, setUserError] = useState<string | null>(null);
+    const [userMessage, setUserMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    useEffect(() => {
+     useEffect(() => {
+        if (!initialSetup) {
+            fetchServerCode();
+        }
         if (currentUser.role === 'superuser') {
             fetchUsers();
         }
-    }, [currentUser.role]);
+    }, [currentUser.role, initialSetup]);
+
+    const fetchServerCode = async () => {
+        setIsLoadingCode(true);
+        setPluginInfo(prev => ({ ...prev, error: null }));
+        setHtaccessInfo(prev => ({ ...prev, error: null }));
+    
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+        try {
+            const pluginResponse = await fetch(GITHUB_PLUGIN_URL, { signal: controller.signal });
+            if (!pluginResponse.ok) throw new Error(\`Server responded with status \${pluginResponse.status}\`);
+            const pluginCode = await pluginResponse.text();
+            const versionMatch = pluginCode.match(/Version:\\s*([0-9.]+)/);
+            setPluginInfo({ code: pluginCode, version: versionMatch ? versionMatch[1] : 'N/A', error: null });
+        } catch (error) {
+            const errorMessage = error instanceof Error && error.name === 'AbortError'
+                ? "Request timed out. Could not fetch plugin from GitHub."
+                : \`Failed to fetch plugin: \${error instanceof Error ? error.message : "Unknown error"}.\`;
+            setPluginInfo(prev => ({ ...prev, error: errorMessage, code: '', version: '' }));
+        }
+    
+        try {
+            const htaccessResponse = await fetch(GITHUB_HTACCESS_URL, { signal: controller.signal });
+            if (!htaccessResponse.ok) throw new Error(\`Server responded with status \${htaccessResponse.status}\`);
+            const htaccessCode = await htaccessResponse.text();
+            setHtaccessInfo({ code: htaccessCode, error: null });
+        } catch (error) {
+            const errorMessage = error instanceof Error && error.name === 'AbortError'
+                ? "Request timed out. Could not fetch .htaccess from GitHub."
+                : \`Failed to fetch .htaccess: \${error instanceof Error ? error.message : "Unknown error"}.\`;
+            setHtaccessInfo(prev => ({ ...prev, error: errorMessage, code: '' }));
+        } finally {
+            clearTimeout(timeoutId);
+            setIsLoadingCode(false);
+        }
+    };
 
     const fetchUsers = async () => {
         setIsUsersLoading(true);
@@ -1326,30 +1086,39 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
         setUserError(null);
+        setUserMessage(null);
         if (!newUserEmail || !newUserPassword) {
             setUserError('Email and password are required.');
             return;
         }
         try {
             await addUser({ email: newUserEmail, password: newUserPassword, role: 'user' });
+            setUserMessage({ type: 'success', text: \`User \${newUserEmail} added successfully.\` });
             setNewUserEmail('');
             setNewUserPassword('');
             await fetchUsers();
         } catch (error) {
-            setUserError(error instanceof Error ? error.message : 'Failed to add user.');
+            const msg = error instanceof Error ? error.message : 'Failed to add user.';
+            setUserMessage({ type: 'error', text: msg });
         }
+        setTimeout(() => setUserMessage(null), 4000);
     };
 
     const handleDeleteUser = async (email: string) => {
         if (window.confirm(\`Are you sure you want to delete user \${email}?\`)) {
+            setUserMessage(null);
             try {
                 await deleteUser(email);
+                setUserMessage({ type: 'success', text: \`User \${email} has been deleted.\` });
                 await fetchUsers();
             } catch (error) {
-                setUserError(error instanceof Error ? error.message : 'Failed to delete user.');
+                const msg = error instanceof Error ? error.message : 'Failed to delete user.';
+                setUserMessage({ type: 'error', text: msg });
             }
+            setTimeout(() => setUserMessage(null), 4000);
         }
     };
+
 
     const handleSave = () => {
         if (secretKey.trim()) {
@@ -1363,7 +1132,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
 
     return (
         <div className="space-y-8">
-            <div className="p-6 bg-white rounded-lg shadow-md space-y-6">
+            <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
                 <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">{initialSetup ? 'Initial API Key Setup' : 'API Key Settings'}</h3>
                 {initialSetup && (
                     <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4" role="alert">
@@ -1379,13 +1148,13 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                             id="secret-key"
                             value={secretKey}
                             onChange={(e) => setSecretKey(e.target.value)}
-                            className="flex-grow shadow-sm focus:ring-indigo-700 focus:border-indigo-700 block w-full sm:text-sm border-slate-300 rounded-md"
+                            className="flex-grow shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-slate-300 rounded-md"
                             placeholder="Enter your secret key"
                         />
                          <button
                             onClick={handleSave}
                             disabled={isSaving || !secretKey.trim()}
-                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:bg-indigo-500 disabled:cursor-wait"
+                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-indigo-500 disabled:cursor-wait"
                         >
                             {isSaving ? <><SpinnerIcon className="w-5 h-5 mr-2" /> Saving...</> : 'Save Key'}
                         </button>
@@ -1394,20 +1163,25 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
             </div>
 
             {currentUser.role === 'superuser' && (
-                <div className="p-6 bg-white rounded-lg shadow-md space-y-6">
+                <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
                      <h3 className="text-lg font-semibold text-slate-800 border-b pb-3 flex items-center gap-2"><UsersIcon className="w-5 h-5"/> User Management</h3>
-                     {userError && <p className="text-sm text-red-600">{userError}</p>}
+                     {userMessage && (
+                        <div className={\`p-3 rounded-md text-sm \${userMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}\`}>
+                            {userMessage.text}
+                        </div>
+                     )}
                      <form onSubmit={handleAddUser} className="space-y-4 sm:flex sm:items-end sm:gap-4">
                         <div className="flex-grow">
                              <label htmlFor="new-user-email" className="block text-sm font-medium text-slate-700">New User Email</label>
-                             <input type="email" id="new-user-email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required className="mt-1 shadow-sm focus:ring-indigo-700 focus:border-indigo-700 block w-full sm:text-sm border-slate-300 rounded-md" />
+                             <input type="email" id="new-user-email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required className="mt-1 shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-slate-300 rounded-md" />
                         </div>
                         <div className="flex-grow">
                              <label htmlFor="new-user-password" className="block text-sm font-medium text-slate-700">Password</label>
-                             <input type="password" id="new-user-password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} required className="mt-1 shadow-sm focus:ring-indigo-700 focus:border-indigo-700 block w-full sm:text-sm border-slate-300 rounded-md" />
+                             <input type="password" id="new-user-password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} required className="mt-1 shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-slate-300 rounded-md" />
                         </div>
                          <button type="submit" className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Add User</button>
                      </form>
+                     {userError && <p className="text-sm text-red-600">{userError}</p>}
                     
                     <div className="border-t pt-4">
                         <h4 className="font-semibold text-md text-slate-700 mb-2">Existing Users</h4>
@@ -1430,7 +1204,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
             )}
 
             {!initialSetup && onLogout && (
-                 <div className="p-6 bg-white rounded-lg shadow-md">
+                 <div className="p-6 bg-white rounded-lg shadow-lg">
                      <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">Account</h3>
                      <div className="mt-4">
                         <button
@@ -1443,7 +1217,29 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                 </div>
             )}
             
-            {!initialSetup && <WordPressPluginCode />}
+            {!initialSetup && (
+                <>
+                    <div className="p-6 bg-white rounded-lg shadow-lg space-y-4">
+                         <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">Server Code Sync</h3>
+                         <div className="flex flex-col sm:flex-row gap-4 items-center">
+                             <button onClick={fetchServerCode} disabled={isLoadingCode} className="flex-1 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-slate-100 disabled:cursor-wait transition-colors">
+                                 {isLoadingCode ? <><SpinnerIcon className="w-5 h-5 mr-2"/>Checking...</> : <><CloudDownloadIcon className="w-5 h-5 mr-2"/>Re-check for Updates</>}
+                             </button>
+                             <div className="text-sm text-slate-600">
+                                {isLoadingCode ? (
+                                    <p>Checking for latest server code...</p>
+                                ) : pluginInfo.error ? (
+                                    <p className="flex items-center gap-2 text-red-600"><ExclamationCircleIcon className="w-5 h-5"/>Could not fetch updates.</p>
+                                ) : (
+                                    <p className="flex items-center gap-2 text-green-600"><CheckCircleIcon className="w-5 h-5"/>Latest plugin version is <strong>{pluginInfo.version}</strong></p>
+                                )}
+                             </div>
+                         </div>
+                    </div>
+                    <WordPressPluginCode code={pluginInfo.code} version={pluginInfo.version} isLoading={isLoadingCode} error={pluginInfo.error} />
+                    <HtaccessCode code={htaccessInfo.code} isLoading={isLoadingCode} error={htaccessInfo.error} />
+                </>
+            )}
         </div>
     );
 };
@@ -1489,7 +1285,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                 <div className="flex flex-col items-center space-y-4">
                     <SchoolLogo className="h-20" />
                     <h2 className="text-2xl font-bold text-center text-slate-800">
-                        Attendance Portal Login
+                        Student Attendance
                     </h2>
                 </div>
                 <form className="space-y-6" onSubmit={handleSubmit}>
@@ -1504,7 +1300,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-t-md focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-t-md focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                                 placeholder="Email address"
                             />
                         </div>
@@ -1518,17 +1314,21 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-b-md focus:outline-none focus:ring-indigo-700 focus:border-indigo-700 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-b-md focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
                                 placeholder="Password"
                             />
                         </div>
                     </div>
-                    {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+
+                    {error && (
+                        <p className="text-sm text-red-600 text-center">{error}</p>
+                    )}
+
                     <div>
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:bg-indigo-500 disabled:cursor-wait"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-indigo-500 disabled:cursor-wait"
                         >
                             {isLoading ? <SpinnerIcon className="h-5 w-5" /> : 'Sign in'}
                         </button>
@@ -1552,7 +1352,9 @@ interface ScanSuccessModalProps {
 }
 
 const ScanSuccessModal: React.FC<ScanSuccessModalProps> = ({ student, scanTime, onClose }) => {
+    // Force HTTPS for avatar URLs to prevent mixed-content errors
     const securePhotoUrl = student.profilePhotoUrl?.replace(/^http:\\/\\//i, 'https://');
+
     return (
         <div 
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" 
@@ -1564,10 +1366,11 @@ const ScanSuccessModal: React.FC<ScanSuccessModalProps> = ({ student, scanTime, 
                 <div className="p-6 text-center">
                     <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
                     <h3 className="text-2xl font-bold text-slate-800" id="modal-title">Welcome!</h3>
+                    
                     <div className="mt-6 flex flex-col items-center gap-4">
                         <div className="w-32 h-32 rounded-full bg-slate-200 border-4 border-slate-300 flex items-center justify-center overflow-hidden">
                             {securePhotoUrl ? 
-                                <img src={securePhotoUrl} alt={student.studentName} className="w-full h-full object-contain" /> : 
+                                <img src={securePhotoUrl} alt={student.studentName} className="w-full h-full object-cover" /> : 
                                 <UserIcon className="w-24 h-24 text-slate-400" />
                             }
                         </div>
@@ -1576,6 +1379,7 @@ const ScanSuccessModal: React.FC<ScanSuccessModalProps> = ({ student, scanTime, 
                              <p className="text-sm text-slate-500">ID: {student.studentId}</p>
                         </div>
                     </div>
+                    
                     <p className="mt-4 text-sm text-slate-500">
                         Marked present at {scanTime.toLocaleTimeString()}
                     </p>
@@ -1584,7 +1388,7 @@ const ScanSuccessModal: React.FC<ScanSuccessModalProps> = ({ student, scanTime, 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-700 text-base font-medium text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 sm:text-sm"
+                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
                     >
                         Close
                     </button>
@@ -1625,6 +1429,7 @@ export default PrintableView;
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Student, Teacher } from '../types';
+import { formatClassName } from '../utils';
 import { SchoolLogo, UserIcon } from './icons';
 
 interface IdCardProps {
@@ -1649,7 +1454,7 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
         photoUrl = s.profilePhotoUrl;
         details = (
             <>
-                <DetailRow label="Class" value={\`\${s.class || 'N/A'}\${s.section ? \` - \${s.section}\` : ''}\`} />
+                <DetailRow label="Class" value={formatClassName(s.class)} />
                 <DetailRow label="Roll No" value={s.rollNumber} />
                 <DetailRow label="Contact" value={s.contactNumber} />
             </>
@@ -1681,7 +1486,7 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
             <main className="flex-grow flex flex-col items-center p-3 text-center">
                 <div className="w-24 h-24 mt-2 border-4 border-indigo-200 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {securePhotoUrl ? 
-                        <img src={securePhotoUrl} alt={name} className="w-full h-full object-contain" /> : 
+                        <img src={securePhotoUrl} alt={name} className="w-full h-full object-cover" /> : 
                         <UserIcon className="w-16 h-16 text-slate-400" />
                     }
                 </div>
@@ -1700,8 +1505,272 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
 };
 export default IdCard;
 `,
+'components/InfoModal.tsx': `
+import React from 'react';
+import { InformationCircleIcon } from './icons';
+
+interface InfoModalProps {
+    title: string;
+    onClose: () => void;
+    children: React.ReactNode;
+}
+
+const InfoModal: React.FC<InfoModalProps> = ({ title, onClose, children }) => {
+    return (
+        <div 
+            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 transition-opacity duration-300" 
+            aria-labelledby="modal-title" 
+            role="dialog" 
+            aria-modal="true"
+        >
+            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-auto transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale" role="document">
+                <div className="p-5 border-b border-slate-200 flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2" id="modal-title">
+                        <InformationCircleIcon className="w-6 h-6 text-indigo-600" />
+                        {title}
+                    </h3>
+                    <button 
+                        onClick={onClose} 
+                        className="text-slate-400 hover:text-slate-800 text-2xl leading-none font-bold"
+                        aria-label="Close"
+                    >
+                        &times;
+                    </button>
+                </div>
+                <div className="p-6 text-slate-600 space-y-4">
+                    {children}
+                </div>
+                <div className="bg-slate-50 px-6 py-4 rounded-b-xl flex justify-end">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 bg-indigo-700 text-base font-medium text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 sm:text-sm"
+                    >
+                        OK
+                    </button>
+                </div>
+            </div>
+            <style>{\`
+                @keyframes fade-in-scale {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-fade-in-scale { animation: fade-in-scale 0.2s ease-out forwards; }
+            \`}</style>
+        </div>
+    );
 };
 
+export default InfoModal;
+`,
+'components/DataViewer.tsx': `
+import React, { useState, useMemo, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import type { Student, Teacher } from '../types';
+import PrintableView from './PrintableView';
+import InfoModal from './InfoModal';
+import { UserIcon, UsersIcon, IdentificationIcon, InformationCircleIcon } from './icons';
+import { formatClassName } from '../utils';
+
+interface DataViewerProps {
+    students: Student[];
+    teachers: Teacher[];
+}
+
+const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
+    const [view, setView] = useState<'students' | 'teachers'>('students');
+    const [selectedPrintClass, setSelectedPrintClass] = useState<string>('all');
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+
+    const filteredStudents = useMemo(() => students.filter(s => s.class && s.class.trim() !== '' && s.class.toLowerCase() !== 'null'), [students]);
+
+    const handlePrint = () => {
+        setTimeout(() => window.print(), 100);
+    };
+    
+    const printRoot = document.getElementById('print-root');
+
+    const groupedStudents = useMemo((): Record<string, Student[]> | null => {
+        if (view !== 'students') return null;
+        const groups = filteredStudents.reduce((acc, student) => {
+            const groupKey = formatClassName(student.class);
+            if (!acc[groupKey]) acc[groupKey] = [];
+            acc[groupKey].push(student);
+            return acc;
+        }, {} as Record<string, Student[]>);
+        return Object.fromEntries(Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))) as Record<string, Student[]>;
+    }, [filteredStudents, view]);
+
+    useEffect(() => {
+        setSelectedPrintClass('all');
+    }, [view]);
+
+    const peopleToPrint = useMemo(() => {
+        if (view === 'teachers') return teachers;
+        if (selectedPrintClass === 'all') return filteredStudents;
+        return groupedStudents?.[selectedPrintClass] || [];
+    }, [view, selectedPrintClass, filteredStudents, groupedStudents, teachers]);
+
+    const type = view === 'students' ? 'student' : 'teacher';
+    
+    const tableHeaders = view === 'students'
+        ? ['Photo', 'ID', 'Name', 'Class', 'Roll No.', 'Contact']
+        : ['Photo', 'ID', 'Name', 'Role', 'Email', 'Phone'];
+
+    const renderTableRow = (person: Student | Teacher) => {
+        const securePhotoUrl = person.profilePhotoUrl?.replace(/^http:\\/\\//i, 'https://');
+        const photoCell = (
+             <td className="px-6 py-2">
+                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden ring-2 ring-white">
+                    {securePhotoUrl ? <img src={securePhotoUrl} alt={type === 'student' ? (person as Student).studentName : (person as Teacher).name} className="w-full h-full object-cover" /> : <UserIcon className="w-6 h-6 text-slate-400" />}
+                </div>
+            </td>
+        );
+
+        if (view === 'students' && 'studentId' in person) {
+            const student = person as Student;
+            return (
+                <tr key={student.studentId}>
+                    {photoCell}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.studentId}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{student.studentName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatClassName(student.class)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.rollNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.contactNumber}</td>
+                </tr>
+            );
+        }
+        if (view === 'teachers' && 'id' in person) {
+            const teacher = person as Teacher;
+            return (
+                <tr key={teacher.id}>
+                    {photoCell}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{teacher.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{teacher.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{teacher.role}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{teacher.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{teacher.phone}</td>
+                </tr>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <>
+        {isInfoModalOpen && (
+            <InfoModal title="How to Change Profile Photos" onClose={() => setIsInfoModalOpen(false)}>
+                <p>Profile photos are managed by the School Management plugin within your WordPress dashboard.</p>
+                <p>To change a student or teacher's photo, please log in to your WordPress admin account, navigate to the user's profile, and upload a new avatar there. The changes will appear in this app after the next data sync.</p>
+            </InfoModal>
+        )}
+        <div className="bg-white rounded-lg shadow-lg">
+            <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-4">
+                     <div className="sm:hidden">
+                        <select
+                            id="tabs-mobile"
+                            name="tabs-mobile"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
+                            onChange={(e) => setView(e.target.value as 'students' | 'teachers')}
+                            value={view}
+                        >
+                            <option value="students">Students</option>
+                            <option value="teachers">Teachers</option>
+                        </select>
+                    </div>
+                    <div className="hidden sm:block">
+                        <nav className="flex space-x-4" aria-label="Tabs">
+                             <button onClick={() => setView('students')} className={\`px-3 py-2 font-medium text-sm rounded-md flex items-center gap-2 \${view === 'students' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:text-slate-700'}\`}>
+                                <UsersIcon className="w-5 h-5" /> Students ({filteredStudents.length})
+                            </button>
+                             <button onClick={() => setView('teachers')} className={\`px-3 py-2 font-medium text-sm rounded-md flex items-center gap-2 \${view === 'teachers' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:text-slate-700'}\`}>
+                                <UserIcon className="w-5 h-5" /> Teachers ({teachers.length})
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {view === 'students' && groupedStudents && (
+                        <select
+                            value={selectedPrintClass}
+                            onChange={(e) => setSelectedPrintClass(e.target.value)}
+                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm rounded-md"
+                        >
+                            <option value="all">Print All Classes</option>
+                            {Object.keys(groupedStudents).map(className => (
+                                <option key={className} value={className}>{\`Print \${className}\`}</option>
+                            ))}
+                        </select>
+                    )}
+                    <button
+                        onClick={handlePrint}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 flex-shrink-0"
+                    >
+                        <IdentificationIcon className="w-5 h-5" />
+                        Print ID Cards
+                    </button>
+                </div>
+            </div>
+            <div className="overflow-x-auto max-h-[32rem]">
+                <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50 sticky top-0 z-10">
+                        <tr>
+                            {tableHeaders.map(header => (
+                                <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                    <div className="flex items-center gap-1">
+                                       {header}
+                                       {header === 'Photo' && (
+                                           <button onClick={() => setIsInfoModalOpen(true)} title="How to change photos">
+                                               <InformationCircleIcon className="w-4 h-4 text-slate-400 hover:text-indigo-600" />
+                                           </button>
+                                       )}
+                                    </div>
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                       {view === 'students' ? (
+                            groupedStudents && Object.keys(groupedStudents).length > 0 ? (
+                                Object.keys(groupedStudents).map(groupName => {
+                                    const studentsInGroup = groupedStudents[groupName];
+                                    return (
+                                        <React.Fragment key={groupName}>
+                                            <tr className="bg-slate-100">
+                                                <th colSpan={tableHeaders.length} className="px-6 py-2 text-left text-sm font-semibold text-slate-700 sticky top-12 bg-slate-100">
+                                                    {groupName}
+                                                </th>
+                                            </tr>
+                                            {studentsInGroup.map(student => renderTableRow(student))}
+                                        </React.Fragment>
+                                    );
+                                })
+                            ) : (
+                                <tr><td colSpan={tableHeaders.length} className="text-center text-slate-500 py-8">No student data available.</td></tr>
+                            )
+                        ) : (
+                            teachers.length > 0 ? (
+                                teachers.map(teacher => renderTableRow(teacher))
+                            ) : (
+                                <tr><td colSpan={tableHeaders.length} className="text-center text-slate-500 py-8">No teacher data available.</td></tr>
+                            )
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {printRoot && ReactDOM.createPortal(
+                <PrintableView people={peopleToPrint} type={type} />,
+                printRoot
+            )}
+        </div>
+        </>
+    );
+};
+export default DataViewer;
+`
+};
 
 const StaticSiteDownloader: React.FC = () => {
     const [isBuilding, setIsBuilding] = useState(false);
@@ -1712,6 +1781,7 @@ const StaticSiteDownloader: React.FC = () => {
         const initializeEsbuild = async () => {
             if (!esbuildInitialized.current) {
                 try {
+                    // Use the default export for the wasm binary
                     await esbuild.initialize({
                         wasmURL: 'https://aistudiocdn.com/esbuild-wasm@^0.23.0/esbuild.wasm',
                     });
@@ -1737,20 +1807,23 @@ const StaticSiteDownloader: React.FC = () => {
             const inMemoryPlugin: Plugin = {
                 name: 'in-memory-plugin',
                 setup(build) {
-                    build.onResolve({ filter: /.*/ }, args => {
-                         if (args.path === 'react' || args.path === 'react-dom' || args.path === 'qrcode.react') {
-                            return { path: args.path, external: true };
-                        }
-                        const path = new URL(args.path, `file:///${args.importer || ''}`).pathname.slice(1);
-                        return { path: path.endsWith('.tsx') || path.endsWith('.ts') ? path : `${path}.tsx`, namespace: 'in-memory' };
+                     build.onResolve({ filter: /^\.\/.*/ }, args => {
+                        const path = args.path.startsWith('./') ? args.path.substring(2) : args.path;
+                        const resolvedPath = new URL(path, `file:///${args.importer}`).pathname.slice(1);
+                        return { path: resolvedPath, namespace: 'in-memory' };
                     });
-
+                    
                     build.onLoad({ filter: /.*/, namespace: 'in-memory' }, args => {
-                        let content = fileContents[args.path] || fileContents[args.path.replace(/\.tsx$/, '.ts')];
-                         if (content === undefined) {
-                            return { errors: [{ text: `File not found: ${args.path}` }] };
+                        let path = args.path;
+                        if (!path.endsWith('.ts') && !path.endsWith('.tsx')) {
+                            path = fileContents[`${path}.tsx`] ? `${path}.tsx` : `${path}.ts`;
                         }
-                        const loader = args.path.endsWith('.tsx') ? 'tsx' : 'ts';
+
+                        let content = fileContents[path];
+                        if (content === undefined) {
+                            return { errors: [{ text: `File not found: ${path}` }] };
+                        }
+                        const loader = path.endsWith('.tsx') ? 'tsx' : 'ts';
                         return { contents: content, loader };
                     });
                 }
@@ -1766,6 +1839,7 @@ const StaticSiteDownloader: React.FC = () => {
                 target: 'es2020',
                 format: 'iife',
                 globalName: 'app',
+                external: ['react', 'react-dom', 'qrcode.react'],
                 define: {
                     'process.env.NODE_ENV': '"production"',
                 },
@@ -1800,9 +1874,20 @@ const StaticSiteDownloader: React.FC = () => {
 <body>
     <div id="root"></div>
     <div id="print-root"></div>
-    <script src="https://aistudiocdn.com/react@^19.2.0/umd/react.production.min.js" defer></script>
-    <script src="https://aistudiocdn.com/react-dom@^19.2.0/umd/react-dom.production.min.js" defer></script>
-    <script src="https://aistudiocdn.com/qrcode.react@^4.2.0/umd/qrcode.react.production.min.js" defer></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script>
+        // Polyfill for qrcode.react as it might not set its global correctly
+        // This makes it available for the external import in esbuild
+        var QRCode = { default: window.QRCode };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode.react@3.1.0/dist/qrcode.react.min.js"></script>
+    <script>
+      // Make external modules available to our bundled code
+      window.React = React;
+      window.ReactDOM = ReactDOM;
+      window.QRCodeReact = QRCode.default;
+    </script>
     <script src="bundle.js" defer></script>
 </body>
 </html>`;

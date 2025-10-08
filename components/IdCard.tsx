@@ -1,6 +1,7 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Student, Teacher } from '../types';
+import { formatClassName } from '../utils';
 import { SchoolLogo, UserIcon } from './icons';
 
 interface IdCardProps {
@@ -25,7 +26,7 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
         photoUrl = s.profilePhotoUrl;
         details = (
             <>
-                <DetailRow label="Class" value={`${s.class || 'N/A'}${s.section ? ` - ${s.section}` : ''}`} />
+                <DetailRow label="Class" value={formatClassName(s.class)} />
                 <DetailRow label="Roll No" value={s.rollNumber} />
                 <DetailRow label="Contact" value={s.contactNumber} />
             </>
@@ -60,7 +61,7 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
             <main className="flex-grow flex flex-col items-center p-3 text-center">
                 <div className="w-24 h-24 mt-2 border-4 border-indigo-200 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {securePhotoUrl ? 
-                        <img src={securePhotoUrl} alt={name} className="w-full h-full object-contain" /> : 
+                        <img src={securePhotoUrl} alt={name} className="w-full h-full object-cover" /> : 
                         <UserIcon className="w-16 h-16 text-slate-400" />
                     }
                 </div>

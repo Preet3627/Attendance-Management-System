@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getUsers, addUser, deleteUser } from '../api';
 import type { User } from '../types';
-// FIX: Imported the missing CheckCircleIcon to resolve a 'Cannot find name' error.
 import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon, CloudDownloadIcon, ExclamationCircleIcon, CheckCircleIcon } from './icons';
 
 interface SettingsProps {
@@ -39,7 +38,7 @@ const WordPressPluginCode = ({ code, version, isLoading, error }: { code: string
                 </h3>
                 <button
                     onClick={handleCopy}
-                    disabled={isLoading || !!error}
+                    disabled={isLoading || !!error || !code}
                     className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out disabled:bg-slate-50 disabled:cursor-not-allowed"
                 >
                     {copyText}
@@ -60,7 +59,7 @@ const WordPressPluginCode = ({ code, version, isLoading, error }: { code: string
                     <SpinnerIcon className="w-8 h-8 text-indigo-700" />
                  </div>
             ) : error ? (
-                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md">{error}</div>
+                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md font-medium">{error}</div>
             ) : (
                 <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
                     <code>
@@ -91,7 +90,7 @@ const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boo
                 </h3>
                 <button
                     onClick={handleCopy}
-                    disabled={isLoading || !!error}
+                    disabled={isLoading || !!error || !code}
                     className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out disabled:bg-slate-50 disabled:cursor-not-allowed"
                 >
                     {copyText}
@@ -108,7 +107,7 @@ const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boo
                     <SpinnerIcon className="w-8 h-8 text-indigo-700" />
                  </div>
             ) : error ? (
-                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md">{error}</div>
+                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md font-medium">{error}</div>
             ) : (
                 <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
                     <code>
@@ -136,6 +135,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
     const [newUserPassword, setNewUserPassword] = useState('');
     const [isUsersLoading, setIsUsersLoading] = useState(false);
     const [userError, setUserError] = useState<string | null>(null);
+    const [userMessage, setUserMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
      useEffect(() => {
         if (!initialSetup) {
@@ -149,26 +149,39 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
 
     const fetchServerCode = async () => {
         setIsLoadingCode(true);
+        setPluginInfo(prev => ({ ...prev, error: null }));
+        setHtaccessInfo(prev => ({ ...prev, error: null }));
+    
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+        // Fetch Plugin
         try {
-            const [pluginResponse, htaccessResponse] = await Promise.all([
-                fetch(GITHUB_PLUGIN_URL),
-                fetch(GITHUB_HTACCESS_URL)
-            ]);
-
-            if (!pluginResponse.ok) throw new Error(`Failed to fetch plugin: ${pluginResponse.statusText}`);
+            const pluginResponse = await fetch(GITHUB_PLUGIN_URL, { signal: controller.signal });
+            if (!pluginResponse.ok) throw new Error(`Server responded with status ${pluginResponse.status}`);
             const pluginCode = await pluginResponse.text();
             const versionMatch = pluginCode.match(/Version:\s*([0-9.]+)/);
             setPluginInfo({ code: pluginCode, version: versionMatch ? versionMatch[1] : 'N/A', error: null });
-
-            if (!htaccessResponse.ok) throw new Error(`Failed to fetch .htaccess: ${htaccessResponse.statusText}`);
+        } catch (error) {
+            const errorMessage = error instanceof Error && error.name === 'AbortError'
+                ? "Request timed out. Could not fetch plugin from GitHub."
+                : `Failed to fetch plugin: ${error instanceof Error ? error.message : "Unknown error"}.`;
+            setPluginInfo(prev => ({ ...prev, error: errorMessage, code: '', version: '' }));
+        }
+    
+        // Fetch .htaccess
+        try {
+            const htaccessResponse = await fetch(GITHUB_HTACCESS_URL, { signal: controller.signal });
+            if (!htaccessResponse.ok) throw new Error(`Server responded with status ${htaccessResponse.status}`);
             const htaccessCode = await htaccessResponse.text();
             setHtaccessInfo({ code: htaccessCode, error: null });
-
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred while fetching files from GitHub.";
-            setPluginInfo(prev => ({ ...prev, error: errorMessage }));
-            setHtaccessInfo(prev => ({ ...prev, error: errorMessage }));
+            const errorMessage = error instanceof Error && error.name === 'AbortError'
+                ? "Request timed out. Could not fetch .htaccess from GitHub."
+                : `Failed to fetch .htaccess: ${error instanceof Error ? error.message : "Unknown error"}.`;
+            setHtaccessInfo(prev => ({ ...prev, error: errorMessage, code: '' }));
         } finally {
+            clearTimeout(timeoutId);
             setIsLoadingCode(false);
         }
     };
@@ -188,28 +201,36 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
         setUserError(null);
+        setUserMessage(null);
         if (!newUserEmail || !newUserPassword) {
             setUserError('Email and password are required.');
             return;
         }
         try {
             await addUser({ email: newUserEmail, password: newUserPassword, role: 'user' });
+            setUserMessage({ type: 'success', text: `User ${newUserEmail} added successfully.` });
             setNewUserEmail('');
             setNewUserPassword('');
             await fetchUsers();
         } catch (error) {
-            setUserError(error instanceof Error ? error.message : 'Failed to add user.');
+            const msg = error instanceof Error ? error.message : 'Failed to add user.';
+            setUserError(msg);
         }
+        setTimeout(() => setUserMessage(null), 4000);
     };
 
     const handleDeleteUser = async (email: string) => {
         if (window.confirm(`Are you sure you want to delete user ${email}?`)) {
+            setUserMessage(null);
             try {
                 await deleteUser(email);
+                setUserMessage({ type: 'success', text: `User ${email} has been deleted.` });
                 await fetchUsers();
             } catch (error) {
-                setUserError(error instanceof Error ? error.message : 'Failed to delete user.');
+                const msg = error instanceof Error ? error.message : 'Failed to delete user.';
+                setUserMessage({ type: 'error', text: msg });
             }
+            setTimeout(() => setUserMessage(null), 4000);
         }
     };
 
@@ -259,7 +280,11 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
             {currentUser.role === 'superuser' && (
                 <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
                      <h3 className="text-lg font-semibold text-slate-800 border-b pb-3 flex items-center gap-2"><UsersIcon className="w-5 h-5"/> User Management</h3>
-                     {userError && <p className="text-sm text-red-600">{userError}</p>}
+                     {userMessage && (
+                        <div className={`p-3 rounded-md text-sm ${userMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {userMessage.text}
+                        </div>
+                     )}
                      <form onSubmit={handleAddUser} className="space-y-4 sm:flex sm:items-end sm:gap-4">
                         <div className="flex-grow">
                              <label htmlFor="new-user-email" className="block text-sm font-medium text-slate-700">New User Email</label>
@@ -271,6 +296,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                         </div>
                          <button type="submit" className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Add User</button>
                      </form>
+                     {userError && <p className="text-sm text-red-600">{userError}</p>}
                     
                     <div className="border-t pt-4">
                         <h4 className="font-semibold text-md text-slate-700 mb-2">Existing Users</h4>
