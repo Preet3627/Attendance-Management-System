@@ -3,7 +3,16 @@ import esbuild from 'esbuild-wasm';
 import type { Plugin } from 'esbuild-wasm';
 import { DownloadIcon, SpinnerIcon, ClipboardIcon } from './icons';
 
-const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/.htaccess';
+const HTACCESS_CODE = `<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteRule . /index.html [L]
+</IfModule>`;
+
 
 // FIX: Escaped all inner template literal backticks (` `) with (\\` \\`) within the file content strings.
 // This prevents the JavaScript parser from prematurely ending the string, which was causing a cascade of syntax errors.
@@ -505,7 +514,7 @@ export interface AddClassPayload {
 }`,
   'api.ts': `
 import type { Student, Teacher, StudentAttendanceRecord, TeacherAttendanceRecord, User, ClassData, AddClassPayload } from './types';
-import { API_BASE_URL } from './config';
+import { API_BASE_URL, API_MGMT_BASE_URL } from './config';
 
 const SUPERUSER_EMAIL = 'ponsri.big.gan.nav@gmail.com';
 const SUPERUSER_PASS = 'Pvp3736@257237';
@@ -561,12 +570,12 @@ interface SyncDataResponse {
     classes: ClassData[];
 }
 
-const apiFetch = async (endpoint: string, secretKey: string, options: RequestInit = {}): Promise<any> => {
+const apiFetch = async (endpoint: string, secretKey: string, options: RequestInit = {}, baseUrl: string = API_BASE_URL): Promise<any> => {
     const headers = new Headers(options.headers || {});
     headers.set('Content-Type', 'application/json');
     headers.set('X-Sync-Key', secretKey);
 
-    const response = await fetch(\\\`\${API_BASE_URL}\${endpoint}\\\`, {
+    const response = await fetch(\\\`\${baseUrl}\${endpoint}\\\`, {
         ...options,
         headers,
     });
@@ -583,11 +592,20 @@ const apiFetch = async (endpoint: string, secretKey: string, options: RequestIni
 };
 
 export const syncAllData = async (secretKey: string): Promise<SyncDataResponse> => {
-    const data = await apiFetch('/data', secretKey, { method: 'GET' });
+    const mainData = await apiFetch('/data', secretKey, { method: 'GET' });
+
+    let fetchedClasses: ClassData[] = [];
+    try {
+        const classData = await apiFetch('/classes', secretKey, { method: 'GET' }, API_MGMT_BASE_URL);
+        fetchedClasses = classData || [];
+    } catch (error) {
+        console.error("Failed to sync classes:", error);
+    }
+
     return {
-        students: data.students || [],
-        teachers: data.teachers || [],
-        classes: data.classes || [],
+        students: mainData.students || [],
+        teachers: mainData.teachers || [],
+        classes: fetchedClasses,
     };
 };
 
@@ -608,7 +626,7 @@ export const uploadTeacherAttendance = async (records: TeacherAttendanceRecord[]
 };
 
 export const getClasses = async (secretKey: string): Promise<ClassData[]> => {
-    const data = await apiFetch('/classes', secretKey, { method: 'GET' });
+    const data = await apiFetch('/classes', secretKey, { method: 'GET' }, API_MGMT_BASE_URL);
     return data || [];
 };
 
@@ -616,43 +634,31 @@ export const addClass = async (payload: AddClassPayload, secretKey: string): Pro
     return await apiFetch('/classes', secretKey, {
         method: 'POST',
         body: JSON.stringify(payload),
-    });
+    }, API_MGMT_BASE_URL);
 };
 
 export const deleteClass = async (classId: string, secretKey: string): Promise<any> => {
     return await apiFetch(\\\`/classes/\${classId}\\\`, secretKey, {
         method: 'DELETE',
-    });
+    }, API_MGMT_BASE_URL);
 };`,
   'config.ts': `
-// IMPORTANT: Configuration for connecting to the school's WordPress server.
-// You MUST update these values to match your server setup.
-
-// 1. Replace with the full URL to your WordPress site.
-export const API_BASE_URL = 'https://ponsrischool.in/wp-json/custom-sync/v1';`,
+export const API_BASE_URL = 'https://ponsrischool.in/wp-json/custom-sync/v1';
+export const API_MGMT_BASE_URL = 'https://ponsrischool.in/wp-json/smgt/v1';`,
   'utils.ts': `
-/**
- * Formats a class name string from the format 'CLASS=>SECTION=>SUBJECT'
- * into a more readable format.
- * @param className The raw class name string from the API.
- * @returns A formatted, human-readable class name.
- */
 export const formatClassName = (className: string | undefined | null): string => {
     if (!className || className.toLowerCase() === 'null') return 'N/A';
     
     const parts = className.split('=>').map(p => p.trim());
     
     if (parts.length >= 2 && parts[0] && parts[1]) {
-        // Format: 8=>A=>SUBJECT  ->  Class 8-A
         return \\\`Class \${parts[0]}-\${parts[1]}\\\`;
     }
     
     if (parts.length === 1 && parts[0]) {
-       // Format: 8 -> Class 8
        return \\\`Class \${parts[0]}\\\`;
     }
 
-    // Fallback for any other format
     return className.split('=>')[0] || 'N/A';
 };`,
   'components/icons.tsx': `
@@ -689,28 +695,10 @@ export const ExclamationCircleIcon = ({ className }: { className?: string }) => 
     </svg>
 );
 
-export const UploadIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-    </svg>
-);
-
 export const DownloadIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
   </svg>
-);
-
-export const LogoutIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-    </svg>
-);
-
-export const SyncIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 4a14.95 14.95 0 0114.364 2.636m0 0A15.05 15.05 0 0120 20m-1.636-13.364A14.95 14.95 0 015.636 17.364m0 0A15.05 15.05 0 014 4" />
-    </svg>
 );
 
 export const UserIcon = ({ className }: { className?: string }) => (
@@ -749,21 +737,9 @@ export const SettingsIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export const KeyIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.629 5.629l-2.371 2.371a2.121 2.121 0 01-3 0l-1.371-1.371a2.121 2.121 0 010-3l2.371-2.371A6 6 0 0121 11zM12 11a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-);
-
 export const ClipboardIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-    </svg>
-);
-
-export const CloudDownloadIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
     </svg>
 );
 
@@ -807,16 +783,9 @@ export const TrashIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
   </svg>
-);
-
-export const DotsVerticalIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-  </svg>
 );`,
   'components/QrScanner.tsx': `
 import React, { useEffect, useRef } from 'react';
-import type { QrScanResult } from '../types';
 
 declare global {
     interface Window {
@@ -856,7 +825,6 @@ const QrScanner: React.FC<QrScannerProps> = ({ onScanSuccess, onScanError }) => 
                 });
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return <div id={QR_SCANNER_ID} className="w-full max-w-md mx-auto"></div>;
@@ -866,7 +834,7 @@ export default QrScanner;`,
   'components/AttendanceList.tsx': `
 import React from 'react';
 import type { StudentAttendanceRecord } from '../types';
-import { CheckCircleIcon, UserIcon } from './icons';
+import { CheckCircleIcon } from './icons';
 
 interface AttendanceListProps {
     records: StudentAttendanceRecord[];
@@ -1355,7 +1323,7 @@ export default DataViewer;`,
 import React, { useState, useEffect } from 'react';
 import { getUsers, addUser, deleteUser } from '../api';
 import type { User } from '../types';
-import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon, CloudDownloadIcon, ExclamationCircleIcon, CheckCircleIcon } from './icons';
+import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon } from './icons';
 
 interface SettingsProps {
     onSaveKey: (key: string) => void;
@@ -1365,67 +1333,194 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/qr-attendance-plugin.php';
-const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/.htaccess';
+const PLUGIN_CODE = \\\`<?php
+/*
+Plugin Name: Custom Data Sync for QR Attendance App
+Description: Provides a secure REST API endpoint to sync student and teacher data for the QR attendance app.
+Version: 1.7
+Author: QR App Support
+*/
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-const WordPressPluginCode = ({ name, code, version, isLoading, error }: { name: string, code: string, version: string, isLoading: boolean, error: string | null }) => {
-    const [copyText, setCopyText] = useState('Copy Code');
+// IMPORTANT: Allow the 'X-Sync-Key' header for CORS requests.
+add_filter( 'rest_allowed_cors_headers', function( \\$allowed_headers ) {
+    \\$allowed_headers[] = 'x-sync-key';
+    return \\$allowed_headers;
+} );
 
-    const handleCopy = () => {
-        if (!code) return;
-        navigator.clipboard.writeText(code).then(() => {
-            setCopyText('Copied!');
-            setTimeout(() => setCopyText('Copy Code'), 2000);
-        }, (err) => {
-            console.error('Could not copy text: ', err);
-            setCopyText('Copy Failed');
-             setTimeout(() => setCopyText('Copy Code'), 2000);
-        });
-    };
-    
-    return (
-        <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
-            <div className="border-b pb-3 flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                    <ClipboardIcon className="w-5 h-5"/> {name} {version && \\\`(v\${version})\\\`}
-                </h3>
-                <button
-                    onClick={handleCopy}
-                    disabled={isLoading || !!error || !code}
-                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out disabled:bg-slate-50 disabled:cursor-not-allowed"
-                >
-                    {copyText}
-                </button>
-            </div>
-            <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4" role="alert">
-                <p className="font-bold">How to Install & Set Your Secret Key</p>
-                <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
-                    <li><strong>Create Plugin File:</strong> Copy the PHP code below and save it in a new file named <code>qr-attendance-plugin.php</code>.</li>
-                    <li><strong>Upload Plugin:</strong> In your WordPress dashboard, go to <strong>Plugins → Add New → Upload Plugin</strong>, and upload the file you just created.</li>
-                    <li><strong>Activate:</strong> Activate the "Custom Data Sync for QR Attendance App" plugin from your plugins list.</li>
-                    <li><strong>Go to Settings:</strong> Navigate to <strong>Settings → QR App Sync</strong> in the left-hand menu.</li>
-                    <li><strong>Save Your Key:</strong> Enter the exact same Secret API Key that you use in this application into the "Secret Key" field and click "Save Settings".</li>
-                </ol>
-            </div>
-            {isLoading ? (
-                 <div className="flex justify-center items-center h-40">
-                    <SpinnerIcon className="w-8 h-8 text-indigo-700" />
-                 </div>
-            ) : error ? (
-                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md font-medium">{error}</div>
-            ) : (
-                <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
-                    <code>
-                        {code}
-                    </code>
-                </pre>
-            )}
+// Register the REST API routes
+add_action('rest_api_init', function () {
+    register_rest_route('custom-sync/v1', '/data', array(
+        'methods' => 'GET',
+        'callback' => 'sync_app_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+    register_rest_route('custom-sync/v1', '/attendance', array(
+        'methods' => 'POST',
+        'callback' => 'receive_attendance_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+});
+
+// Permission check for the API key
+if (!function_exists('sync_permission_check')) {
+    function sync_permission_check(\\$request) {
+        \\$secret_key = \\$request->get_header('X-Sync-Key');
+        \\$stored_key = get_option('qr_app_secret_key', ''); 
+        if (empty(\\$stored_key) || empty(\\$secret_key) || !hash_equals(\\$stored_key, \\$secret_key)) {
+            return new WP_Error('rest_forbidden', 'Invalid or missing secret key.', array('status' => 401));
+        }
+        return true;
+    }
+}
+
+// Helper function to get user profile photo
+if (!function_exists('get_custom_user_photo_url')) {
+    function get_custom_user_photo_url(\\$user_id) {
+        \\$avatar_meta = get_user_meta(\\$user_id, 'smgt_user_avatar', true);
+        if (!empty(\\$avatar_meta)) {
+            if (is_numeric(\\$avatar_meta)) {
+                \\$image_url = wp_get_attachment_image_url(\\$avatar_meta, 'full');
+                if (\\$image_url) {
+                    return \\$image_url;
+                }
+            }
+            elseif (filter_var(\\$avatar_meta, FILTER_VALIDATE_URL)) {
+                return \\$avatar_meta;
+            }
+        }
+        return get_avatar_url(\\$user_id);
+    }
+}
+
+// Callback function to provide the data
+if (!function_exists('sync_app_data')) {
+    function sync_app_data(\\$request) {
+        \\$response_data = array(
+            'students' => array(),
+            'teachers' => array(),
+        );
+
+        \\$student_users = get_users(array('role' => 'student'));
+        foreach (\\$student_users as \\$user) {
+            \\$student_data = array(
+                'studentId'     => (string)\\$user->ID,
+                'studentName'   => \\$user->display_name,
+                'class'         => get_user_meta(\\$user->ID, 'class_name', true),
+                'section'       => get_user_meta(\\$user->ID, 'class_section', true),
+                'rollNumber'    => get_user_meta(\\$user->ID, 'roll_id', true),
+                'contactNumber' => get_user_meta(\\$user->ID, 'mobile', true),
+                'profilePhotoUrl' => get_custom_user_photo_url(\\$user->ID),
+            );
+            \\$response_data['students'][] = \\$student_data;
+        }
+
+        \\$teacher_users = get_users(array('role' => 'teacher'));
+        foreach (\\$teacher_users as \\$user) {
+            \\$teacher_data = array(
+                'id'    => (string)\\$user->ID,
+                'name'  => \\$user->display_name,
+                'role'  => 'Teacher',
+                'email' => \\$user->user_email,
+                'phone' => get_user_meta(\\$user->ID, 'mobile', true),
+                'profilePhotoUrl' => get_custom_user_photo_url(\\$user->ID),
+            );
+            \\$response_data['teachers'][] = \\$teacher_data;
+        }
+
+        return new WP_REST_Response(\\$response_data, 200);
+    }
+}
+
+// Callback function to receive attendance data
+if (!function_exists('receive_attendance_data')) {
+    function receive_attendance_data(\\$request) {
+        global \\$wpdb;
+        \\$params = \\$request->get_json_params();
+        \\$attendance_table = \\$wpdb->prefix . 'smgt_attendence';
+
+        if (isset(\\$params['students']) && is_array(\\$params['students'])) {
+            foreach (\\$params['students'] as \\$student_record) {
+                 \\$wpdb->insert(
+                    \\$attendance_table,
+                    array(
+                        'user_id' => \\$student_record['id'],
+                        'attendence_date' => (new DateTime(\\$student_record['timestamp']))->format('Y-m-d'),
+                        'status' => 'Present',
+                        'attendence_by' => get_current_user_id() ?: 1,
+                        'role_name' => 'student'
+                    )
+                );
+            }
+        }
+        
+        if (isset(\\$params['teachers']) && is_array(\\$params['teachers'])) {
+            foreach (\\$params['teachers'] as \\$teacher_record) {
+                \\$wpdb->insert(\\$attendance_table, array(
+                    'user_id' => \\$teacher_record['teacherId'],
+                    'attendence_date' => \\$teacher_record['date'],
+                    'status' => \\$teacher_record['status'],
+                    'comment' => \\$teacher_record['comment'],
+                    'attendence_by' => get_current_user_id() ?: 1,
+                    'role_name' => 'teacher'
+                ));
+            }
+        }
+
+        return new WP_REST_Response(array('success' => true, 'message' => 'Attendance recorded.'), 200);
+    }
+}
+
+// Add a settings page for the API key
+add_action('admin_menu', function() {
+    add_options_page('QR App Sync Settings', 'QR App Sync', 'manage_options', 'qr-app-sync', 'qr_app_settings_page_html');
+});
+
+if (!function_exists('qr_app_settings_page_html')) {
+    function qr_app_settings_page_html() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        if (isset(\$_GET['settings-updated'])) {
+            add_settings_error('qr_app_messages', 'qr_app_message', __('Settings Saved', 'qr-app-sync'), 'updated');
+        }
+        settings_errors('qr_app_messages');
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+            <p>Use this page to set the secret API key required for the QR Attendance App to sync data.</p>
+            <form action="options.php" method="post">
+                <?php
+                settings_fields('qr-app-sync');
+                do_settings_sections('qr-app-sync');
+                submit_button('Save Settings');
+                ?>
+            </form>
         </div>
-    );
-};
+        <?php
+    }
+}
 
-const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boolean, error: string | null }) => {
+add_action('admin_init', function() {
+    register_setting('qr-app-sync', 'qr_app_secret_key');
+    add_settings_section('qr_app_section_developers', __('API Settings', 'qr-app-sync'), null, 'qr-app-sync');
+    add_settings_field('qr_app_secret_key', __('Secret Key', 'qr-app-sync'), 'qr_app_secret_key_callback', 'qr-app-sync', 'qr_app_section_developers');
+});
+
+if (!function_exists('qr_app_secret_key_callback')) {
+    function qr_app_secret_key_callback() {
+        \\$option = get_option('qr_app_secret_key');
+        echo '<input type="text" id="qr_app_secret_key" name="qr_app_secret_key" value="' . esc_attr(\\$option) . '" size="50" />';
+        echo '<p class="description">Enter a strong, unique secret key for the app to use. This must match the key entered in the app.</p>';
+    }
+}
+?>\\\`;
+
+const HtaccessCode = ({ code }: { code: string }) => {
     const [copyText, setCopyText] = useState('Copy Code');
 
     const handleCopy = () => {
@@ -1444,8 +1539,7 @@ const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boo
                 </h3>
                 <button
                     onClick={handleCopy}
-                    disabled={isLoading || !!error || !code}
-                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out"
                 >
                     {copyText}
                 </button>
@@ -1456,33 +1550,67 @@ const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boo
                     The <code>.htaccess</code> file is a powerful configuration file for web servers running Apache. Copy the code below and place it in the root directory of your WordPress installation. If a file already exists, you can add these rules to it (usually at the top). These rules help improve security and performance.
                 </p>
             </div>
-             {isLoading ? (
-                 <div className="flex justify-center items-center h-40">
-                    <SpinnerIcon className="w-8 h-8 text-indigo-700" />
-                 </div>
-            ) : error ? (
-                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md font-medium">{error}</div>
-            ) : (
-                <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
-                    <code>
-                        {code}
-                    </code>
-                </pre>
-            )}
+            <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
+                <code>
+                    {code}
+                </code>
+            </pre>
         </div>
     );
 };
 
 
+const WordPressPluginCode = ({ name, code, version }: { name: string, code: string, version: string }) => {
+    const [copyText, setCopyText] = useState('Copy Code');
+
+    const handleCopy = () => {
+        if (!code) return;
+        navigator.clipboard.writeText(code).then(() => {
+            setCopyText('Copied!');
+            setTimeout(() => setCopyText('Copy Code'), 2000);
+        }, (err) => {
+            console.error('Could not copy text: ', err);
+            setCopyText('Copy Failed');
+             setTimeout(() => setCopyText('Copy Code'), 2000);
+        });
+    };
+    
+    return (
+        <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
+            <div className="border-b pb-3 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    <ClipboardIcon className="w-5 h-5"/> {name} (v{version})
+                </h3>
+                <button
+                    onClick={handleCopy}
+                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out"
+                >
+                    {copyText}
+                </button>
+            </div>
+            <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4" role="alert">
+                <p className="font-bold">How to Install & Set Your Secret Key</p>
+                <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
+                    <li><strong>Create Plugin File:</strong> Copy the PHP code below and save it in a new file named <code>qr-attendance-plugin.php</code>.</li>
+                    <li><strong>Upload Plugin:</strong> In your WordPress dashboard, go to <strong>Plugins → Add New → Upload Plugin</strong>, and upload the file you just created.</li>
+                    <li><strong>Activate:</strong> Activate the "Custom Data Sync for QR Attendance App" plugin from your plugins list.</li>
+                    <li><strong>Go to Settings:</strong> Navigate to <strong>Settings → QR App Sync</strong> in the left-hand menu.</li>
+                    <li><strong>Save Your Key:</strong> Enter the exact same Secret API Key that you use in this application into the "Secret Key" field and click "Save Settings".</li>
+                </ol>
+            </div>
+            <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
+                <code>
+                    {code}
+                </code>
+            </pre>
+        </div>
+    );
+};
+
 const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: initialKey, initialSetup = false, currentUser }) => {
     const [secretKey, setSecretKey] = useState(initialKey || '');
     const [isSaving, setIsSaving] = useState(false);
     
-    // Server code state
-    const [pluginInfo, setPluginInfo] = useState({ name: 'WordPress Plugin', code: '', version: '', error: null as string | null });
-    const [htaccessInfo, setHtaccessInfo] = useState({ code: '', error: null as string | null });
-    const [isLoadingCode, setIsLoadingCode] = useState(true);
-
     // User management state
     const [users, setUsers] = useState<Omit<User, 'password'>[]>([]);
     const [newUserEmail, setNewUserEmail] = useState('');
@@ -1492,59 +1620,10 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
     const [userMessage, setUserMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
      useEffect(() => {
-        if (!initialSetup) {
-            fetchServerCode();
-        }
         if (currentUser.role === 'superuser') {
             fetchUsers();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUser.role, initialSetup]);
-
-    const fetchServerCode = async () => {
-        setIsLoadingCode(true);
-        setPluginInfo(prev => ({ ...prev, error: null }));
-        setHtaccessInfo(prev => ({ ...prev, error: null }));
-    
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-    
-        // Fetch Plugin
-        try {
-            const pluginResponse = await fetch(GITHUB_PLUGIN_URL, { signal: controller.signal });
-            if (!pluginResponse.ok) throw new Error(\\\`Server responded with status \${pluginResponse.status}\\\`);
-            const pluginCode = await pluginResponse.text();
-            const versionMatch = pluginCode.match(/Version:\\s*([0-9.]+)/);
-            const nameMatch = pluginCode.match(/Plugin Name:\\s*(.*)/);
-            setPluginInfo({ 
-                name: nameMatch ? nameMatch[1] : 'WordPress Plugin',
-                code: pluginCode, 
-                version: versionMatch ? versionMatch[1] : 'N/A', 
-                error: null 
-            });
-        } catch (error) {
-            const errorMessage = error instanceof Error && error.name === 'AbortError'
-                ? "Request timed out. Could not fetch plugin from GitHub."
-                : \\\`Failed to fetch plugin: \${error instanceof Error ? error.message : "Unknown error"}.\\\`;
-            setPluginInfo(prev => ({ ...prev, error: errorMessage, name: 'WordPress Plugin', code: '', version: '' }));
-        }
-    
-        // Fetch .htaccess
-        try {
-            const htaccessResponse = await fetch(GITHUB_HTACCESS_URL, { signal: controller.signal });
-            if (!htaccessResponse.ok) throw new Error(\\\`Server responded with status \${htaccessResponse.status}\\\`);
-            const htaccessCode = await htaccessResponse.text();
-            setHtaccessInfo({ code: htaccessCode, error: null });
-        } catch (error) {
-            const errorMessage = error instanceof Error && error.name === 'AbortError'
-                ? "Request timed out. Could not fetch .htaccess from GitHub."
-                : \\\`Failed to fetch .htaccess: \${error instanceof Error ? error.message : "Unknown error"}.\\\`;
-            setHtaccessInfo(prev => ({ ...prev, error: errorMessage, code: '' }));
-        } finally {
-            clearTimeout(timeoutId);
-            setIsLoadingCode(false);
-        }
-    };
 
     const fetchUsers = async () => {
         setIsUsersLoading(true);
@@ -1603,6 +1682,14 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                 setIsSaving(false);
             }, 500);
         }
+    };
+    
+    const versionMatch = PLUGIN_CODE.match(/Version:\\s*([0-9.]+)/);
+    const nameMatch = PLUGIN_CODE.match(/Plugin Name:\\s*(.*)/);
+    const pluginInfo = {
+        name: nameMatch ? nameMatch[1].trim() : 'WordPress Plugin',
+        code: PLUGIN_CODE,
+        version: versionMatch ? versionMatch[1].trim() : 'N/A'
     };
 
     return (
@@ -1694,25 +1781,8 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
             
             {!initialSetup && (
                 <>
-                    <div className="p-6 bg-white rounded-lg shadow-lg space-y-4">
-                         <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">Server Code Sync</h3>
-                         <div className="flex flex-col sm:flex-row gap-4 items-center">
-                             <button onClick={fetchServerCode} disabled={isLoadingCode} className="flex-1 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-slate-100 disabled:cursor-wait transition-colors">
-                                 {isLoadingCode ? <><SpinnerIcon className="w-5 h-5 mr-2"/>Checking...</> : <><CloudDownloadIcon className="w-5 h-5 mr-2"/>Re-check for Updates</>}
-                             </button>
-                             <div className="text-sm text-slate-600">
-                                {isLoadingCode ? (
-                                    <p>Checking for latest server code...</p>
-                                ) : pluginInfo.error ? (
-                                    <p className="flex items-center gap-2 text-red-600"><ExclamationCircleIcon className="w-5 h-5"/>Could not fetch updates.</p>
-                                ) : (
-                                    <p className="flex items-center gap-2 text-green-600"><CheckCircleIcon className="w-5 h-5"/>Latest plugin version is <strong>{pluginInfo.version}</strong></p>
-                                )}
-                             </div>
-                         </div>
-                    </div>
-                    <WordPressPluginCode name={pluginInfo.name} code={pluginInfo.code} version={pluginInfo.version} isLoading={isLoadingCode} error={pluginInfo.error} />
-                    <HtaccessCode code={htaccessInfo.code} isLoading={isLoadingCode} error={htaccessInfo.error} />
+                    <WordPressPluginCode name={pluginInfo.name} code={pluginInfo.code} version={pluginInfo.version} />
+                    <HtaccessCode code={HTACCESS_CODE} />
                 </>
             )}
         </div>
@@ -2175,7 +2245,7 @@ export default Header;`,
 import React, { useState, useEffect } from 'react';
 import type { ClassData, AddClassPayload } from '../types';
 import { getClasses, addClass, deleteClass } from '../api';
-import { BookOpenIcon, PlusIcon, SpinnerIcon, TrashIcon, UsersIcon, ExclamationCircleIcon, DotsVerticalIcon } from './icons';
+import { BookOpenIcon, PlusIcon, SpinnerIcon, TrashIcon } from './icons';
 
 interface ClassManagerProps {
     initialClasses: ClassData[];
@@ -2190,12 +2260,12 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
-        // Fetch fresh data on component mount to ensure it's up-to-date
-        fetchClassData();
+        if (!initialClasses.length) {
+            fetchClassData();
+        }
     }, []);
 
     useEffect(() => {
-        // This keeps the component in sync if a global refresh happens
         setClasses(initialClasses);
     }, [initialClasses]);
 
@@ -2216,9 +2286,9 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
         try {
             await addClass(payload, secretKey);
             setIsModalOpen(false);
-            onDataChange(); // Trigger global sync to get all data again
+            onDataChange(); 
         } catch (err) {
-            throw err; // Let the modal handle the error display
+            throw err; 
         }
     };
 
@@ -2226,7 +2296,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
         if (window.confirm("Are you sure you want to delete this class? This action cannot be undone.")) {
             try {
                 await deleteClass(classId, secretKey);
-                onDataChange(); // Trigger global sync
+                onDataChange(); 
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to delete class.");
             }
@@ -2314,7 +2384,6 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
     );
 };
 
-// AddClassModal sub-component
 const AddClassModal: React.FC<{onClose: () => void, onAddClass: (payload: AddClassPayload) => Promise<void>}> = ({ onClose, onAddClass }) => {
     const [name, setName] = useState('');
     const [numeric, setNumeric] = useState('');
@@ -2390,7 +2459,6 @@ const AddClassModal: React.FC<{onClose: () => void, onAddClass: (payload: AddCla
     );
 };
 
-
 export default ClassManager;`,
 };
 
@@ -2433,7 +2501,7 @@ const StaticSiteDownloader: React.FC = () => {
             if (!esbuildInitialized.current) {
                 try {
                     await esbuild.initialize({
-                        wasmURL: 'https://cdn.jsdelivr.net/npm/esbuild-wasm@0.23.0/esbuild.wasm',
+                        wasmURL: 'https://unpkg.com/esbuild-wasm@0.23.0/esbuild.wasm',
                     });
                     esbuildInitialized.current = true;
                 } catch (e) {
@@ -2495,9 +2563,6 @@ const StaticSiteDownloader: React.FC = () => {
             
             const bundledJs = result.outputFiles[0].text;
             
-            const htaccessRes = await fetch(GITHUB_HTACCESS_URL);
-            const htaccessCode = htaccessRes.ok ? await htaccessRes.text() : '# Could not fetch .htaccess file. Please check your network or get it from the GitHub repo.';
-
             const finalHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2537,7 +2602,7 @@ const StaticSiteDownloader: React.FC = () => {
 </body>
 </html>`;
 
-            setGeneratedCode({ html: finalHtml, js: bundledJs, htaccess: htaccessCode });
+            setGeneratedCode({ html: finalHtml, js: bundledJs, htaccess: HTACCESS_CODE });
 
         } catch (e) {
             console.error(e);

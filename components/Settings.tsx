@@ -11,11 +11,205 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const GITHUB_PLUGIN_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/qr-attendance-plugin.php';
-const GITHUB_HTACCESS_URL = 'https://raw.githubusercontent.com/Preet3627/Attendance-Management-System/main/.htaccess';
+const PLUGIN_CODE = `<?php
+/*
+Plugin Name: Custom Data Sync for QR Attendance App
+Description: Provides a secure REST API endpoint to sync student and teacher data for the QR attendance app.
+Version: 1.7
+Author: QR App Support
+*/
+
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// IMPORTANT: Allow the 'X-Sync-Key' header for CORS requests.
+add_filter( 'rest_allowed_cors_headers', function( $allowed_headers ) {
+    $allowed_headers[] = 'x-sync-key';
+    return $allowed_headers;
+} );
+
+// Register the REST API routes
+add_action('rest_api_init', function () {
+    register_rest_route('custom-sync/v1', '/data', array(
+        'methods' => 'GET',
+        'callback' => 'sync_app_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+    register_rest_route('custom-sync/v1', '/attendance', array(
+        'methods' => 'POST',
+        'callback' => 'receive_attendance_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+});
+
+// Permission check for the API key
+if (!function_exists('sync_permission_check')) {
+    function sync_permission_check($request) {
+        $secret_key = $request->get_header('X-Sync-Key');
+        $stored_key = get_option('qr_app_secret_key', ''); 
+        if (empty($stored_key) || empty($secret_key) || !hash_equals($stored_key, $secret_key)) {
+            return new WP_Error('rest_forbidden', 'Invalid or missing secret key.', array('status' => 401));
+        }
+        return true;
+    }
+}
+
+// Helper function to get user profile photo
+if (!function_exists('get_custom_user_photo_url')) {
+    function get_custom_user_photo_url($user_id) {
+        $avatar_meta = get_user_meta($user_id, 'smgt_user_avatar', true);
+        if (!empty($avatar_meta)) {
+            if (is_numeric($avatar_meta)) {
+                $image_url = wp_get_attachment_image_url($avatar_meta, 'full');
+                if ($image_url) {
+                    return $image_url;
+                }
+            }
+            elseif (filter_var($avatar_meta, FILTER_VALIDATE_URL)) {
+                return $avatar_meta;
+            }
+        }
+        return get_avatar_url($user_id);
+    }
+}
+
+// Callback function to provide the data
+if (!function_exists('sync_app_data')) {
+    function sync_app_data($request) {
+        $response_data = array(
+            'students' => array(),
+            'teachers' => array(),
+        );
+
+        $student_users = get_users(array('role' => 'student'));
+        foreach ($student_users as $user) {
+            $student_data = array(
+                'studentId'     => (string)$user->ID,
+                'studentName'   => $user->display_name,
+                'class'         => get_user_meta($user->ID, 'class_name', true),
+                'section'       => get_user_meta($user->ID, 'class_section', true),
+                'rollNumber'    => get_user_meta($user->ID, 'roll_id', true),
+                'contactNumber' => get_user_meta($user->ID, 'mobile', true),
+                'profilePhotoUrl' => get_custom_user_photo_url($user->ID),
+            );
+            $response_data['students'][] = $student_data;
+        }
+
+        $teacher_users = get_users(array('role' => 'teacher'));
+        foreach ($teacher_users as $user) {
+            $teacher_data = array(
+                'id'    => (string)$user->ID,
+                'name'  => $user->display_name,
+                'role'  => 'Teacher',
+                'email' => $user->user_email,
+                'phone' => get_user_meta($user->ID, 'mobile', true),
+                'profilePhotoUrl' => get_custom_user_photo_url($user->ID),
+            );
+            $response_data['teachers'][] = $teacher_data;
+        }
+
+        return new WP_REST_Response($response_data, 200);
+    }
+}
+
+// Callback function to receive attendance data
+if (!function_exists('receive_attendance_data')) {
+    function receive_attendance_data($request) {
+        global $wpdb;
+        $params = $request->get_json_params();
+        $attendance_table = $wpdb->prefix . 'smgt_attendence';
+
+        if (isset($params['students']) && is_array($params['students'])) {
+            foreach ($params['students'] as $student_record) {
+                 $wpdb->insert(
+                    $attendance_table,
+                    array(
+                        'user_id' => $student_record['id'],
+                        'attendence_date' => (new DateTime($student_record['timestamp']))->format('Y-m-d'),
+                        'status' => 'Present',
+                        'attendence_by' => get_current_user_id() ?: 1,
+                        'role_name' => 'student'
+                    )
+                );
+            }
+        }
+        
+        if (isset($params['teachers']) && is_array($params['teachers'])) {
+            foreach ($params['teachers'] as $teacher_record) {
+                $wpdb->insert($attendance_table, array(
+                    'user_id' => $teacher_record['teacherId'],
+                    'attendence_date' => $teacher_record['date'],
+                    'status' => $teacher_record['status'],
+                    'comment' => $teacher_record['comment'],
+                    'attendence_by' => get_current_user_id() ?: 1,
+                    'role_name' => 'teacher'
+                ));
+            }
+        }
+
+        return new WP_REST_Response(array('success' => true, 'message' => 'Attendance recorded.'), 200);
+    }
+}
+
+// Add a settings page for the API key
+add_action('admin_menu', function() {
+    add_options_page('QR App Sync Settings', 'QR App Sync', 'manage_options', 'qr-app-sync', 'qr_app_settings_page_html');
+});
+
+if (!function_exists('qr_app_settings_page_html')) {
+    function qr_app_settings_page_html() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        if (isset($_GET['settings-updated'])) {
+            add_settings_error('qr_app_messages', 'qr_app_message', __('Settings Saved', 'qr-app-sync'), 'updated');
+        }
+        settings_errors('qr_app_messages');
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+            <p>Use this page to set the secret API key required for the QR Attendance App to sync data.</p>
+            <form action="options.php" method="post">
+                <?php
+                settings_fields('qr-app-sync');
+                do_settings_sections('qr-app-sync');
+                submit_button('Save Settings');
+                ?>
+            </form>
+        </div>
+        <?php
+    }
+}
+
+add_action('admin_init', function() {
+    register_setting('qr-app-sync', 'qr_app_secret_key');
+    add_settings_section('qr_app_section_developers', __('API Settings', 'qr-app-sync'), null, 'qr-app-sync');
+    add_settings_field('qr_app_secret_key', __('Secret Key', 'qr-app-sync'), 'qr_app_secret_key_callback', 'qr-app-sync', 'qr_app_section_developers');
+});
+
+if (!function_exists('qr_app_secret_key_callback')) {
+    function qr_app_secret_key_callback() {
+        $option = get_option('qr_app_secret_key');
+        echo '<input type="text" id="qr_app_secret_key" name="qr_app_secret_key" value="' . esc_attr($option) . '" size="50" />';
+        echo '<p class="description">Enter a strong, unique secret key for the app to use. This must match the key entered in the app.</p>';
+    }
+}
+?>`;
+
+const HTACCESS_CODE = `<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteRule . /index.html [L]
+</IfModule>`;
 
 
-const WordPressPluginCode = ({ name, code, version, isLoading, error }: { name: string, code: string, version: string, isLoading: boolean, error: string | null }) => {
+const WordPressPluginCode = ({ name, code, version }: { name: string, code: string, version: string }) => {
     const [copyText, setCopyText] = useState('Copy Code');
 
     const handleCopy = () => {
@@ -23,10 +217,6 @@ const WordPressPluginCode = ({ name, code, version, isLoading, error }: { name: 
         navigator.clipboard.writeText(code).then(() => {
             setCopyText('Copied!');
             setTimeout(() => setCopyText('Copy Code'), 2000);
-        }, (err) => {
-            console.error('Could not copy text: ', err);
-            setCopyText('Copy Failed');
-             setTimeout(() => setCopyText('Copy Code'), 2000);
         });
     };
     
@@ -34,12 +224,11 @@ const WordPressPluginCode = ({ name, code, version, isLoading, error }: { name: 
         <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
             <div className="border-b pb-3 flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                    <ClipboardIcon className="w-5 h-5"/> {name} {version && `(v${version})`}
+                    <ClipboardIcon className="w-5 h-5"/> {name} (v{version})
                 </h3>
                 <button
                     onClick={handleCopy}
-                    disabled={isLoading || !!error || !code}
-                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out"
                 >
                     {copyText}
                 </button>
@@ -54,24 +243,16 @@ const WordPressPluginCode = ({ name, code, version, isLoading, error }: { name: 
                     <li><strong>Save Your Key:</strong> Enter the exact same Secret API Key that you use in this application into the "Secret Key" field and click "Save Settings".</li>
                 </ol>
             </div>
-            {isLoading ? (
-                 <div className="flex justify-center items-center h-40">
-                    <SpinnerIcon className="w-8 h-8 text-indigo-700" />
-                 </div>
-            ) : error ? (
-                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md font-medium">{error}</div>
-            ) : (
-                <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
-                    <code>
-                        {code}
-                    </code>
-                </pre>
-            )}
+            <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
+                <code>
+                    {code}
+                </code>
+            </pre>
         </div>
     );
 };
 
-const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boolean, error: string | null }) => {
+const HtaccessCode = ({ code }: { code: string }) => {
     const [copyText, setCopyText] = useState('Copy Code');
 
     const handleCopy = () => {
@@ -90,8 +271,7 @@ const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boo
                 </h3>
                 <button
                     onClick={handleCopy}
-                    disabled={isLoading || !!error || !code}
-                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all duration-150 ease-in-out"
                 >
                     {copyText}
                 </button>
@@ -102,19 +282,11 @@ const HtaccessCode = ({ code, isLoading, error }: { code: string, isLoading: boo
                     The <code>.htaccess</code> file is a powerful configuration file for web servers running Apache. Copy the code below and place it in the root directory of your WordPress installation. If a file already exists, you can add these rules to it (usually at the top). These rules help improve security and performance.
                 </p>
             </div>
-             {isLoading ? (
-                 <div className="flex justify-center items-center h-40">
-                    <SpinnerIcon className="w-8 h-8 text-indigo-700" />
-                 </div>
-            ) : error ? (
-                <div className="text-center text-red-600 bg-red-50 p-4 rounded-md font-medium">{error}</div>
-            ) : (
-                <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
-                    <code>
-                        {code}
-                    </code>
-                </pre>
-            )}
+            <pre className="bg-slate-800 text-white p-4 rounded-md text-sm overflow-x-auto">
+                <code>
+                    {code}
+                </code>
+            </pre>
         </div>
     );
 };
@@ -124,11 +296,6 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
     const [secretKey, setSecretKey] = useState(initialKey || '');
     const [isSaving, setIsSaving] = useState(false);
     
-    // Server code state
-    const [pluginInfo, setPluginInfo] = useState({ name: 'WordPress Plugin', code: '', version: '', error: null as string | null });
-    const [htaccessInfo, setHtaccessInfo] = useState({ code: '', error: null as string | null });
-    const [isLoadingCode, setIsLoadingCode] = useState(true);
-
     // User management state
     const [users, setUsers] = useState<Omit<User, 'password'>[]>([]);
     const [newUserEmail, setNewUserEmail] = useState('');
@@ -136,61 +303,22 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
     const [isUsersLoading, setIsUsersLoading] = useState(false);
     const [userError, setUserError] = useState<string | null>(null);
     const [userMessage, setUserMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    
+    // Parse plugin info from constant
+    const versionMatch = PLUGIN_CODE.match(/Version:\\s*([0-9.]+)/);
+    const nameMatch = PLUGIN_CODE.match(/Plugin Name:\\s*(.*)/);
+    const pluginInfo = {
+        name: nameMatch ? nameMatch[1] : 'WordPress Plugin',
+        code: PLUGIN_CODE,
+        version: versionMatch ? versionMatch[1] : 'N/A',
+    };
 
      useEffect(() => {
-        if (!initialSetup) {
-            fetchServerCode();
-        }
         if (currentUser.role === 'superuser') {
             fetchUsers();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUser.role, initialSetup]);
+    }, [currentUser.role]);
 
-    const fetchServerCode = async () => {
-        setIsLoadingCode(true);
-        setPluginInfo(prev => ({ ...prev, error: null }));
-        setHtaccessInfo(prev => ({ ...prev, error: null }));
-    
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-    
-        // Fetch Plugin
-        try {
-            const pluginResponse = await fetch(GITHUB_PLUGIN_URL, { signal: controller.signal });
-            if (!pluginResponse.ok) throw new Error(`Server responded with status ${pluginResponse.status}`);
-            const pluginCode = await pluginResponse.text();
-            const versionMatch = pluginCode.match(/Version:\s*([0-9.]+)/);
-            const nameMatch = pluginCode.match(/Plugin Name:\s*(.*)/);
-            setPluginInfo({ 
-                name: nameMatch ? nameMatch[1] : 'WordPress Plugin',
-                code: pluginCode, 
-                version: versionMatch ? versionMatch[1] : 'N/A', 
-                error: null 
-            });
-        } catch (error) {
-            const errorMessage = error instanceof Error && error.name === 'AbortError'
-                ? "Request timed out. Could not fetch plugin from GitHub."
-                : `Failed to fetch plugin: ${error instanceof Error ? error.message : "Unknown error"}.`;
-            setPluginInfo(prev => ({ ...prev, error: errorMessage, name: 'WordPress Plugin', code: '', version: '' }));
-        }
-    
-        // Fetch .htaccess
-        try {
-            const htaccessResponse = await fetch(GITHUB_HTACCESS_URL, { signal: controller.signal });
-            if (!htaccessResponse.ok) throw new Error(`Server responded with status ${htaccessResponse.status}`);
-            const htaccessCode = await htaccessResponse.text();
-            setHtaccessInfo({ code: htaccessCode, error: null });
-        } catch (error) {
-            const errorMessage = error instanceof Error && error.name === 'AbortError'
-                ? "Request timed out. Could not fetch .htaccess from GitHub."
-                : `Failed to fetch .htaccess: ${error instanceof Error ? error.message : "Unknown error"}.`;
-            setHtaccessInfo(prev => ({ ...prev, error: errorMessage, code: '' }));
-        } finally {
-            clearTimeout(timeoutId);
-            setIsLoadingCode(false);
-        }
-    };
 
     const fetchUsers = async () => {
         setIsUsersLoading(true);
@@ -340,25 +468,8 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
             
             {!initialSetup && (
                 <>
-                    <div className="p-6 bg-white rounded-lg shadow-lg space-y-4">
-                         <h3 className="text-lg font-semibold text-slate-800 border-b pb-3">Server Code Sync</h3>
-                         <div className="flex flex-col sm:flex-row gap-4 items-center">
-                             <button onClick={fetchServerCode} disabled={isLoadingCode} className="flex-1 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-slate-100 disabled:cursor-wait transition-colors">
-                                 {isLoadingCode ? <><SpinnerIcon className="w-5 h-5 mr-2"/>Checking...</> : <><CloudDownloadIcon className="w-5 h-5 mr-2"/>Re-check for Updates</>}
-                             </button>
-                             <div className="text-sm text-slate-600">
-                                {isLoadingCode ? (
-                                    <p>Checking for latest server code...</p>
-                                ) : pluginInfo.error ? (
-                                    <p className="flex items-center gap-2 text-red-600"><ExclamationCircleIcon className="w-5 h-5"/>Could not fetch updates.</p>
-                                ) : (
-                                    <p className="flex items-center gap-2 text-green-600"><CheckCircleIcon className="w-5 h-5"/>Latest plugin version is <strong>{pluginInfo.version}</strong></p>
-                                )}
-                             </div>
-                         </div>
-                    </div>
-                    <WordPressPluginCode name={pluginInfo.name} code={pluginInfo.code} version={pluginInfo.version} isLoading={isLoadingCode} error={pluginInfo.error} />
-                    <HtaccessCode code={htaccessInfo.code} isLoading={isLoadingCode} error={htaccessInfo.error} />
+                    <WordPressPluginCode name={pluginInfo.name} code={pluginInfo.code} version={pluginInfo.version} />
+                    <HtaccessCode code={HTACCESS_CODE} />
                 </>
             )}
         </div>
