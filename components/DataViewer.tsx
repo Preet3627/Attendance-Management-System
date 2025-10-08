@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import type { Student, Teacher } from '../types';
+import type { Student, Teacher, ClassData } from '../types';
 import PrintableView from './PrintableView';
 import InfoModal from './InfoModal';
 import { UserIcon, UsersIcon, IdentificationIcon, InformationCircleIcon } from './icons';
@@ -11,13 +11,16 @@ type PrintOrientation = 'portrait' | 'landscape';
 interface DataViewerProps {
     students: Student[];
     teachers: Teacher[];
+    classes: ClassData[];
 }
 
-const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
+const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) => {
     const [view, setView] = useState<'students' | 'teachers'>('students');
     const [selectedPrintClass, setSelectedPrintClass] = useState<string>('all');
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [printOrientation, setPrintOrientation] = useState<PrintOrientation>('portrait');
+
+    const classMap = useMemo(() => new Map(classes.map(c => [c.id, c])), [classes]);
 
     const filteredStudents = useMemo(() => students.filter(s => s.class && s.class.trim() !== '' && s.class.toLowerCase() !== 'null'), [students]);
 
@@ -30,13 +33,20 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
     const groupedStudents = useMemo((): Record<string, Student[]> | null => {
         if (view !== 'students') return null;
         const groups = filteredStudents.reduce((acc, student) => {
-            const groupKey = formatClassName(student.class);
+            const classInfo = classMap.get(student.class);
+            const groupKey = classInfo ? formatClassName(classInfo.class_name) : 'Unassigned Students';
             if (!acc[groupKey]) acc[groupKey] = [];
             acc[groupKey].push(student);
             return acc;
         }, {} as Record<string, Student[]>);
-        return Object.fromEntries(Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))) as Record<string, Student[]>;
-    }, [filteredStudents, view]);
+
+        const sortedEntries = Object.entries(groups).sort(([a], [b]) => {
+            if (a === 'Unassigned Students') return 1;
+            if (b === 'Unassigned Students') return -1;
+            return a.localeCompare(b);
+        });
+        return Object.fromEntries(sortedEntries);
+    }, [filteredStudents, view, classMap]);
 
     useEffect(() => {
         setSelectedPrintClass('all');
@@ -66,12 +76,15 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
 
         if (view === 'students' && 'studentId' in person) {
             const student = person as Student;
+            const classInfo = classMap.get(student.class);
+            const displayClassName = classInfo ? formatClassName(classInfo.class_name) : 'Unassigned';
+
             return (
                 <tr key={student.studentId}>
                     {photoCell}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.studentId}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{student.studentName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatClassName(student.class)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{displayClassName}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.rollNumber}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.contactNumber}</td>
                 </tr>
@@ -211,7 +224,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
             </div>
 
             {printRoot && ReactDOM.createPortal(
-                <PrintableView people={peopleToPrint} type={type} orientation={printOrientation} />,
+                <PrintableView people={peopleToPrint} type={type} orientation={printOrientation} classMap={classMap} />,
                 printRoot
             )}
         </div>

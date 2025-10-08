@@ -1,12 +1,13 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import type { Student, Teacher } from '../types';
+import type { Student, Teacher, ClassData } from '../types';
 import { formatClassName } from '../utils';
 import { UserIcon } from './icons';
 
 interface IdCardProps {
     person: Student | Teacher;
     type: 'student' | 'teacher';
+    classMap: Map<string, ClassData>;
 }
 
 const DetailRow = ({ label, value }: { label: string, value: string | undefined }) => (
@@ -17,7 +18,7 @@ const DetailRow = ({ label, value }: { label: string, value: string | undefined 
 );
 
 
-const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
+const IdCard: React.FC<IdCardProps> = ({ person, type, classMap }) => {
     let name: string, id: string, photoUrl: string | undefined, details: React.ReactNode;
 
     if (type === 'student') {
@@ -25,9 +26,13 @@ const IdCard: React.FC<IdCardProps> = ({ person, type }) => {
         name = s.studentName;
         id = s.studentId;
         photoUrl = s.profilePhotoUrl;
+
+        const classInfo = classMap.get(s.class);
+        const displayClassName = classInfo ? formatClassName(classInfo.class_name) : 'Unassigned';
+
         details = (
             <>
-                <DetailRow label="Class" value={formatClassName(s.class)} />
+                <DetailRow label="Class" value={displayClassName} />
                 <DetailRow label="Roll No." value={s.rollNumber} />
                 <DetailRow label="Contact No." value={s.contactNumber} />
             </>

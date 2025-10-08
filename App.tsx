@@ -265,7 +265,7 @@ const App: React.FC = () => {
             case 'class_management':
                 return <ClassManager initialClasses={classes} secretKey={secretKey} onDataChange={() => handleSync()} />;
             case 'data_viewer':
-                return <DataViewer students={students} teachers={teachers} />;
+                return <DataViewer students={students} teachers={teachers} classes={classes} />;
             case 'settings':
                 return <Settings onSaveKey={handleSaveKey} onLogout={handleLogout} secretKey={secretKey} currentUser={currentUser} />;
             default:

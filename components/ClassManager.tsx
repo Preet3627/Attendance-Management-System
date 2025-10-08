@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { ClassData, AddClassPayload } from '../types';
 import { getClasses, addClass, deleteClass } from '../api';
 import { BookOpenIcon, PlusIcon, SpinnerIcon, TrashIcon, UsersIcon, ExclamationCircleIcon, DotsVerticalIcon } from './icons';
+import { formatSection, displayWithFallback } from '../utils';
 
 interface ClassManagerProps {
     initialClasses: ClassData[];
@@ -59,13 +60,6 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
         }
     };
 
-    const formatSection = (section: string | string[]) => {
-        if (Array.isArray(section)) {
-            return section.join(', ');
-        }
-        return section || 'No Section';
-    }
-
     return (
         <>
         {isModalOpen && (
@@ -118,7 +112,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
                             <tr key={cls.id} className="hover:bg-slate-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{cls.class_name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatSection(cls.class_section)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{cls.class_numeric}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{displayWithFallback(cls.class_numeric, 'No Section')}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{`${cls.student_count || 0} Out Of ${cls.class_capacity}`}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button 
