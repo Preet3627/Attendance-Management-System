@@ -1,4 +1,4 @@
-import type { Student, Teacher, StudentAttendanceRecord, TeacherAttendanceRecord, User } from './types';
+import type { Student, Teacher, StudentAttendanceRecord, TeacherAttendanceRecord, User, ClassData } from './types';
 import { API_BASE_URL } from './config';
 
 // --- USER AUTHENTICATION & MANAGEMENT (LOCAL STORAGE BASED) ---
@@ -60,6 +60,7 @@ export const deleteUser = async (email: string): Promise<void> => {
 interface SyncDataResponse {
     students: Student[];
     teachers: Teacher[];
+    classes: ClassData[];
 }
 
 const apiFetch = async (endpoint: string, secretKey: string, options: RequestInit = {}): Promise<any> => {
@@ -102,4 +103,20 @@ export const uploadTeacherAttendance = async (records: TeacherAttendanceRecord[]
         method: 'POST',
         body: JSON.stringify({ teachers: records }),
     });
+};
+
+// --- CLASS MANAGEMENT API ---
+export const getClasses = async (secretKey: string): Promise<ClassData[]> => {
+    return await apiFetch('/classes', secretKey, { method: 'GET' });
+};
+
+export const addClass = async (classData: Omit<ClassData, 'id'>, secretKey: string): Promise<ClassData> => {
+    return await apiFetch('/classes', secretKey, {
+        method: 'POST',
+        body: JSON.stringify(classData),
+    });
+};
+
+export const deleteClass = async (classId: string, secretKey: string): Promise<void> => {
+    await apiFetch(`/classes/${classId}`, secretKey, { method: 'DELETE' });
 };

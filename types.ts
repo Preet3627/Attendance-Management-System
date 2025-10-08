@@ -49,3 +49,11 @@ export interface User {
     password?: string; // Password should not be sent back to the client
     role: 'superuser' | 'user';
 }
+
+export interface ClassData {
+    id: string;
+    class_name: string;
+    sections: string | null;
+    class_numeric: string;
+    class_capacity: string;
+}

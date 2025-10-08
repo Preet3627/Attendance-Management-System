@@ -5,7 +5,7 @@ import {
     uploadStudentAttendance,
     uploadTeacherAttendance,
 } from './api';
-import type { Student, Teacher, StudentAttendanceRecord, AttendanceStatus, TeacherAttendanceRecord, User } from './types';
+import type { Student, Teacher, StudentAttendanceRecord, AttendanceStatus, TeacherAttendanceRecord, User, ClassData } from './types';
 import QrScanner from './components/QrScanner';
 import AttendanceList from './components/AttendanceList';
 import DataControls from './components/ExportControls';
@@ -16,9 +16,10 @@ import Login from './components/Login';
 import ScanSuccessModal from './components/ScanSuccessModal';
 import StaticSiteDownloader from './components/StaticSiteDownloader';
 import Header from './components/Header';
-import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, DownloadIcon } from './components/icons';
+import ClassManager from './components/ClassManager';
+import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, DownloadIcon, BookOpenIcon } from './components/icons';
 
-type View = 'student_attendance' | 'teacher_attendance' | 'data_viewer' | 'settings' | 'export_website';
+type View = 'student_attendance' | 'teacher_attendance' | 'class_management' | 'data_viewer' | 'settings' | 'export_website';
 
 const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -33,6 +34,7 @@ const App: React.FC = () => {
     // Data state
     const [students, setStudents] = useState<Student[]>([]);
     const [teachers, setTeachers] = useState<Teacher[]>([]);
+    const [classes, setClasses] = useState<ClassData[]>([]);
     const [studentMap, setStudentMap] = useState<Map<string, Student>>(new Map());
 
     // Student attendance state
@@ -84,6 +86,7 @@ const App: React.FC = () => {
         // Clear all local data
         setStudents([]);
         setTeachers([]);
+        setClasses([]);
         setStudentMap(new Map());
         setAttendanceRecords([]);
         setTeacherAttendance(new Map());
@@ -97,9 +100,10 @@ const App: React.FC = () => {
         }
         setSyncError(null);
         try {
-            const { students: fetchedStudents, teachers: fetchedTeachers } = await syncAllData(key);
+            const { students: fetchedStudents, teachers: fetchedTeachers, classes: fetchedClasses } = await syncAllData(key);
             setStudents(fetchedStudents);
             setTeachers(fetchedTeachers);
+            setClasses(fetchedClasses);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
             setSyncError(`Failed to sync with the school server: ${errorMessage}. Please check your Secret Key and network connection.`);
@@ -210,6 +214,8 @@ const App: React.FC = () => {
                 );
             case 'teacher_attendance':
                 return <TeacherAttendance teachers={teachers} attendance={teacherAttendance} onAttendanceChange={setTeacherAttendance} onSubmit={handleSubmitTeacherAttendance} />;
+            case 'class_management':
+                return <ClassManager initialClasses={classes} secretKey={secretKey} onDataChange={() => handleSync()} />;
             case 'data_viewer':
                 return <DataViewer students={students} teachers={teachers} />;
             case 'settings':
@@ -250,6 +256,7 @@ const App: React.FC = () => {
                         >
                             <option value="student_attendance">Student Attendance</option>
                             <option value="teacher_attendance">Teacher Attendance</option>
+                            <option value="class_management">Class</option>
                             <option value="data_viewer">Manage Data & IDs</option>
                             <option value="export_website">Export Website</option>
                             <option value="settings">Settings</option>
@@ -271,6 +278,13 @@ const App: React.FC = () => {
                                 >
                                     <UsersIcon className="w-5 h-5" />
                                     Teacher Attendance
+                                </button>
+                                 <button
+                                    onClick={() => setView('class_management')}
+                                    className={`${view === 'class_management' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                                >
+                                    <BookOpenIcon className="w-5 h-5" />
+                                    Class
                                 </button>
                                 <button
                                     onClick={() => setView('data_viewer')}
