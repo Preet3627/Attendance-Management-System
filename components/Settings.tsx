@@ -15,7 +15,7 @@ const PLUGIN_CODE = `<?php
 /*
 Plugin Name: Custom Data Sync for QR Attendance App
 Description: Provides a secure REST API endpoint to sync student, teacher, and class data for the QR attendance app.
-Version: 2.0
+Version: 2.1
 Author: QR App Support
 */
 
@@ -114,7 +114,7 @@ if (!function_exists('fetch_class_data_from_db')) {
             $classes_data[] = array(
                 'id' => (string)$class->class_id,
                 'class_name' => $class->class_name,
-                'class_numeric' => $class->class_num_value,
+                'class_numeric' => $class->class_numeric,
                 'class_section' => maybe_unserialize($class->section_name),
                 'class_capacity' => $class->class_capacity,
                 'student_count' => (int)$student_count,
@@ -219,7 +219,7 @@ if (!function_exists('add_new_class_data')) {
 
         $data_to_insert = array(
             'class_name' => sanitize_text_field($params['class_name']),
-            'class_num_value' => intval($params['class_numeric']),
+            'class_numeric' => intval($params['class_numeric']),
             'section_name' => serialize($params['class_section']), // Serialize array for storage
             'class_capacity' => intval($params['class_capacity']),
         );

@@ -182,7 +182,7 @@ const App: React.FC = () => {
             setClasses(fetchedClasses);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-            setSyncError(\\\`Failed to sync with the school server: \${errorMessage}. Please check your Secret Key and network connection.\\\`);
+            setSyncError(\`Failed to sync with the school server: \${errorMessage}. Please check your Secret Key and network connection.\`);
         } finally {
             if (isSyncingOnLoad) setIsSyncingOnLoad(false);
         }
@@ -207,17 +207,17 @@ const App: React.FC = () => {
             if (type === 'teacher') {
                 const teacher = teacherMap.get(id);
                 if (!teacher) {
-                    setScanError(\\\`Teacher with ID \${id} not found. Please sync data.\\\`);
+                    setScanError(\`Teacher with ID \${id} not found. Please sync data.\`);
                     return;
                 }
                 if (teacherScanRecords.some(rec => rec.teacherId === id)) {
-                    setScanError(\\\`Teacher \${name} already marked present.\\\`);
+                    setScanError(\`Teacher \${name} already marked present.\`);
                     return;
                 }
                 // Update manual attendance state
                 setTeacherAttendance(prev => {
                     const newAttendance = new Map(prev);
-                    newAttendance.set(id, { status: 'Present', comment: \\\`Scanned at \${timeString}\\\` });
+                    newAttendance.set(id, { status: 'Present', comment: \`Scanned at \${timeString}\` });
                     return newAttendance;
                 });
                 // Add to scan log for this session
@@ -226,19 +226,19 @@ const App: React.FC = () => {
                     teacherName: name,
                     date: scanTime.toISOString().split('T')[0],
                     status: 'Present',
-                    comment: \\\`Scanned at \${timeString}\\\`
+                    comment: \`Scanned at \${timeString}\`
                 };
                 setTeacherScanRecords(prev => [newRecord, ...prev]);
                 setLastScannedInfo({ person: teacher, time: scanTime });
 
             } else { // Default to student
                 if (attendanceRecords.some(rec => rec.id === id)) {
-                    setScanError(\\\`Already marked present: \${name} (\${id})\\\`);
+                    setScanError(\`Already marked present: \${name} (\${id})\`);
                     return;
                 }
                 const student = studentMap.get(id);
                 if (!student) {
-                    setScanError(\\\`Student with ID \${id} not found. Please sync data.\\\`);
+                    setScanError(\`Student with ID \${id} not found. Please sync data.\`);
                     return;
                 }
                 const newRecord = { id, name, timestamp: scanTime };
@@ -248,7 +248,7 @@ const App: React.FC = () => {
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-            setScanError(\\\`Failed to process QR code. Error: \${errorMessage}\\\`);
+            setScanError(\`Failed to process QR code. Error: \${errorMessage}\`);
         }
     };
 
@@ -269,7 +269,7 @@ const App: React.FC = () => {
             alert("Teacher attendance submitted successfully!");
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-            alert(\\\`Submission failed: \${errorMessage}\\\`);
+            alert(\`Submission failed: \${errorMessage}\`);
         }
     };
 
@@ -317,10 +317,10 @@ const App: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-lg">
                     <div className="border-b border-slate-200">
                          <nav className="-mb-px flex space-x-6 px-6" aria-label="Tabs">
-                            <button onClick={() => setLogView('students')} className={\\\`\${logView === 'students' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm\\\`}>
+                            <button onClick={() => setLogView('students')} className={\`\${logView === 'students' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm\`}>
                                 Student Log ({attendanceRecords.length})
                             </button>
-                            <button onClick={() => setLogView('teachers')} className={\\\`\${logView === 'teachers' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm\\\`}>
+                            <button onClick={() => setLogView('teachers')} className={\`\${logView === 'teachers' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm\`}>
                                 Teacher Log ({teacherScanRecords.length})
                             </button>
                          </nav>
@@ -390,42 +390,42 @@ const App: React.FC = () => {
                             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                                 <button
                                     onClick={() => setView('qr_attendance')}
-                                    className={\\\`\${view === 'qr_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\\\`}
+                                    className={\`\${view === 'qr_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\`}
                                 >
                                     <QrCodeIcon className="w-5 h-5" />
                                     QR Attendance
                                 </button>
                                 <button
                                     onClick={() => setView('teacher_attendance')}
-                                    className={\\\`\${view === 'teacher_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\\\`}
+                                    className={\`\${view === 'teacher_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\`}
                                 >
                                     <UsersIcon className="w-5 h-5" />
                                     Teacher Attendance
                                 </button>
                                  <button
                                     onClick={() => setView('class_management')}
-                                    className={\\\`\${view === 'class_management' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\\\`}
+                                    className={\`\${view === 'class_management' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\`}
                                 >
                                     <BookOpenIcon className="w-5 h-5" />
                                     Class
                                 </button>
                                 <button
                                     onClick={() => setView('data_viewer')}
-                                    className={\\\`\${view === 'data_viewer' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\\\`}
+                                    className={\`\${view === 'data_viewer' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\`}
                                 >
                                     <IdentificationIcon className="w-5 h-5" />
                                     Manage Data & IDs
                                 </button>
                                 <button
                                     onClick={() => setView('export_website')}
-                                    className={\\\`\${view === 'export_website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\\\`}
+                                    className={\`\${view === 'export_website' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\`}
                                 >
                                     <DownloadIcon className="w-5 h-5" />
                                     Export Website
                                 </button>
                                 <button
                                     onClick={() => setView('settings')}
-                                    className={\\\`\${view === 'settings' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\\\`}
+                                    className={\`\${view === 'settings' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer\`}
                                 >
                                     <SettingsIcon className="w-5 h-5" />
                                     Settings
@@ -575,7 +575,7 @@ const apiFetch = async (endpoint: string, secretKey: string, options: RequestIni
     headers.set('Content-Type', 'application/json');
     headers.set('X-Sync-Key', secretKey);
 
-    const response = await fetch(\\\`\${API_BASE_URL}\${endpoint}\\\`, {
+    const response = await fetch(\`\${API_BASE_URL}\${endpoint}\`, {
         ...options,
         headers,
     });
@@ -631,7 +631,7 @@ export const addClass = async (payload: AddClassPayload, secretKey: string): Pro
 };
 
 export const deleteClass = async (classId: string, secretKey: string): Promise<any> => {
-    return await apiFetch(\\\`/classes/\${classId}\\\`, secretKey, {
+    return await apiFetch(\`/classes/\${classId}\`, secretKey, {
         method: 'DELETE',
     });
 };
@@ -649,11 +649,11 @@ export const formatClassName = (className: string | undefined | null): string =>
     const parts = className.split('=>').map(p => p.trim());
     
     if (parts.length >= 2 && parts[0] && parts[1]) {
-        return \\\`Class \${parts[0]}-\${parts[1]}\\\`;
+        return \`Class \${parts[0]}-\${parts[1]}\`;
     }
     
     if (parts.length === 1 && parts[0]) {
-       return \\\`Class \${parts[0]}\\\`;
+       return \`Class \${parts[0]}\`;
     }
 
     return className.split('=>')[0] || 'N/A';
@@ -717,7 +717,7 @@ export const IdentificationIcon = ({ className }: { className?: string }) => (
 );
 
 export const SpinnerIcon = ({ className }: { className?: string }) => (
-  <svg className={\\\`animate-spin \${className}\\\`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+  <svg className={\`animate-spin \${className}\`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
   </svg>
@@ -1080,7 +1080,7 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ teachers, attenda
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{teacher.name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                                         <select
-                                            name={\\\`attendance-\${teacher.id}\\\`}
+                                            name={\`attendance-\${teacher.id}\`}
                                             value={teacherAttendance.status}
                                             onChange={(e) => handleStatusChange(teacher.id, e.target.value as AttendanceStatus)}
                                             className="w-full p-1 border-slate-300 rounded-md shadow-sm focus:ring-indigo-600 focus:border-indigo-600"
@@ -1227,10 +1227,10 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
                     </div>
                     <div className="hidden sm:block">
                         <nav className="flex space-x-4" aria-label="Tabs">
-                             <button onClick={() => setView('students')} className={\\\`px-3 py-2 font-medium text-sm rounded-md flex items-center gap-2 \${view === 'students' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:text-slate-700'}\\\`}>
+                             <button onClick={() => setView('students')} className={\`px-3 py-2 font-medium text-sm rounded-md flex items-center gap-2 \${view === 'students' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:text-slate-700'}\`}>
                                 <UsersIcon className="w-5 h-5" /> Students ({filteredStudents.length})
                             </button>
-                             <button onClick={() => setView('teachers')} className={\\\`px-3 py-2 font-medium text-sm rounded-md flex items-center gap-2 \${view === 'teachers' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:text-slate-700'}\\\`}>
+                             <button onClick={() => setView('teachers')} className={\`px-3 py-2 font-medium text-sm rounded-md flex items-center gap-2 \${view === 'teachers' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:text-slate-700'}\`}>
                                 <UserIcon className="w-5 h-5" /> Teachers ({teachers.length})
                             </button>
                         </nav>
@@ -1245,7 +1245,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers }) => {
                         >
                             <option value="all">Print All Classes</option>
                             {Object.keys(groupedStudents).map(className => (
-                                <option key={className} value={className}>{\\\`Print \${className}\\\`}</option>
+                                <option key={className} value={className}>{\`Print \${className}\`}</option>
                             ))}
                         </select>
                     )}
@@ -1330,11 +1330,11 @@ interface SettingsProps {
     currentUser: Omit<User, 'password'>;
 }
 
-const PLUGIN_CODE = \\\`<?php
+const PLUGIN_CODE = \`<?php
 /*
 Plugin Name: Custom Data Sync for QR Attendance App
 Description: Provides a secure REST API endpoint to sync student, teacher, and class data for the QR attendance app.
-Version: 2.0
+Version: 2.1
 Author: QR App Support
 */
 
@@ -1344,9 +1344,9 @@ if (!defined('ABSPATH')) {
 }
 
 // IMPORTANT: Allow the 'X-Sync-Key' header for CORS requests.
-add_filter( 'rest_allowed_cors_headers', function( \\$allowed_headers ) {
-    \\$allowed_headers[] = 'x-sync-key';
-    return \\$allowed_headers;
+add_filter( 'rest_allowed_cors_headers', function( \$allowed_headers ) {
+    \$allowed_headers[] = 'x-sync-key';
+    return \$allowed_headers;
 } );
 
 // Register the REST API routes
@@ -1375,7 +1375,7 @@ add_action('rest_api_init', function () {
         'callback' => 'add_new_class_data',
         'permission_callback' => 'sync_permission_check',
     ));
-    register_rest_route('custom-sync/v1', '/classes/(?P<id>\\\\d+)', array(
+    register_rest_route('custom-sync/v1', '/classes/(?P<id>\\d+)', array(
         'methods' => 'DELETE',
         'callback' => 'delete_class_data',
         'permission_callback' => 'sync_permission_check',
@@ -1384,10 +1384,10 @@ add_action('rest_api_init', function () {
 
 // Permission check for the API key
 if (!function_exists('sync_permission_check')) {
-    function sync_permission_check(\\$request) {
-        \\$secret_key = \\$request->get_header('X-Sync-Key');
-        \\$stored_key = get_option('qr_app_secret_key', ''); 
-        if (empty(\\$stored_key) || empty(\\$secret_key) || !hash_equals(\\$stored_key, \\$secret_key)) {
+    function sync_permission_check(\$request) {
+        \$secret_key = \$request->get_header('X-Sync-Key');
+        \$stored_key = get_option('qr_app_secret_key', ''); 
+        if (empty(\$stored_key) || empty(\$secret_key) || !hash_equals(\$stored_key, \$secret_key)) {
             return new WP_Error('rest_forbidden', 'Invalid or missing secret key.', array('status' => 401));
         }
         return true;
@@ -1396,115 +1396,115 @@ if (!function_exists('sync_permission_check')) {
 
 // Helper function to get user profile photo
 if (!function_exists('get_custom_user_photo_url')) {
-    function get_custom_user_photo_url(\\$user_id) {
-        \\$avatar_meta = get_user_meta(\\$user_id, 'smgt_user_avatar', true);
-        if (!empty(\\$avatar_meta)) {
-            if (is_numeric(\\$avatar_meta)) {
-                \\$image_url = wp_get_attachment_image_url(\\$avatar_meta, 'full');
-                return \\$image_url ?: get_avatar_url(\\$user_id);
+    function get_custom_user_photo_url(\$user_id) {
+        \$avatar_meta = get_user_meta(\$user_id, 'smgt_user_avatar', true);
+        if (!empty(\$avatar_meta)) {
+            if (is_numeric(\$avatar_meta)) {
+                \$image_url = wp_get_attachment_image_url(\$avatar_meta, 'full');
+                return \$image_url ?: get_avatar_url(\$user_id);
             }
-            if (filter_var(\\$avatar_meta, FILTER_VALIDATE_URL)) {
-                return \\$avatar_meta;
+            if (filter_var(\$avatar_meta, FILTER_VALIDATE_URL)) {
+                return \$avatar_meta;
             }
         }
-        return get_avatar_url(\\$user_id);
+        return get_avatar_url(\$user_id);
     }
 }
 
 // Central function to fetch class data
 if (!function_exists('fetch_class_data_from_db')) {
     function fetch_class_data_from_db() {
-        global \\$wpdb;
-        \\$class_table = \\$wpdb->prefix . 'smgt_class';
-        \\$usermeta_table = \\$wpdb->prefix . 'usermeta';
+        global \$wpdb;
+        \$class_table = \$wpdb->prefix . 'smgt_class';
+        \$usermeta_table = \$wpdb->prefix . 'usermeta';
 
-        if (\\$wpdb->get_var("SHOW TABLES LIKE '\\$class_table'") != \\$class_table) {
+        if (\$wpdb->get_var("SHOW TABLES LIKE '\$class_table'") != \$class_table) {
             return []; // Return empty if table doesn't exist
         }
 
-        \\$classes_results = \\$wpdb->get_results("SELECT * FROM \\$class_table");
-        \\$classes_data = array();
+        \$classes_results = \$wpdb->get_results("SELECT * FROM \$class_table");
+        \$classes_data = array();
 
-        foreach(\\$classes_results as \\$class) {
-            \\$student_count = \\$wpdb->get_var(\\$wpdb->prepare(
-                "SELECT COUNT(*) FROM \\$usermeta_table WHERE meta_key = 'class_name' AND meta_value = %s", \\$class->class_name
+        foreach(\$classes_results as \$class) {
+            \$student_count = \$wpdb->get_var(\$wpdb->prepare(
+                "SELECT COUNT(*) FROM \$usermeta_table WHERE meta_key = 'class_name' AND meta_value = %s", \$class->class_name
             ));
 
-            \\$classes_data[] = array(
-                'id' => (string)\\$class->class_id,
-                'class_name' => \\$class->class_name,
-                'class_numeric' => \\$class->class_num_value,
-                'class_section' => maybe_unserialize(\\$class->section_name),
-                'class_capacity' => \\$class->class_capacity,
-                'student_count' => (int)\\$student_count,
+            \$classes_data[] = array(
+                'id' => (string)\$class->class_id,
+                'class_name' => \$class->class_name,
+                'class_numeric' => \$class->class_numeric,
+                'class_section' => maybe_unserialize(\$class->section_name),
+                'class_capacity' => \$class->class_capacity,
+                'student_count' => (int)\$student_count,
             );
         }
-        return \\$classes_data;
+        return \$classes_data;
     }
 }
 
 // Callback for GET /classes
 if (!function_exists('get_all_classes_data')) {
-    function get_all_classes_data(\\$request) {
+    function get_all_classes_data(\$request) {
         return new WP_REST_Response(fetch_class_data_from_db(), 200);
     }
 }
 
 // Callback function for main data sync GET /data
 if (!function_exists('sync_app_data')) {
-    function sync_app_data(\\$request) {
-        \\$response_data = array(
+    function sync_app_data(\$request) {
+        \$response_data = array(
             'students' => array(),
             'teachers' => array(),
             'classes'  => array(),
         );
 
         // Fetch Students
-        \\$student_users = get_users(array('role' => 'student'));
-        foreach (\\$student_users as \\$user) {
-            \\$response_data['students'][] = array(
-                'studentId'     => (string)\\$user->ID,
-                'studentName'   => \\$user->display_name,
-                'class'         => get_user_meta(\\$user->ID, 'class_name', true),
-                'section'       => get_user_meta(\\$user->ID, 'class_section', true),
-                'rollNumber'    => get_user_meta(\\$user->ID, 'roll_id', true),
-                'contactNumber' => get_user_meta(\\$user->ID, 'mobile', true),
-                'profilePhotoUrl' => get_custom_user_photo_url(\\$user->ID),
+        \$student_users = get_users(array('role' => 'student'));
+        foreach (\$student_users as \$user) {
+            \$response_data['students'][] = array(
+                'studentId'     => (string)\$user->ID,
+                'studentName'   => \$user->display_name,
+                'class'         => get_user_meta(\$user->ID, 'class_name', true),
+                'section'       => get_user_meta(\$user->ID, 'class_section', true),
+                'rollNumber'    => get_user_meta(\$user->ID, 'roll_id', true),
+                'contactNumber' => get_user_meta(\$user->ID, 'mobile', true),
+                'profilePhotoUrl' => get_custom_user_photo_url(\$user->ID),
             );
         }
 
         // Fetch Teachers
-        \\$teacher_users = get_users(array('role' => 'teacher'));
-        foreach (\\$teacher_users as \\$user) {
-            \\$response_data['teachers'][] = array(
-                'id'    => (string)\\$user->ID,
-                'name'  => \\$user->display_name,
+        \$teacher_users = get_users(array('role' => 'teacher'));
+        foreach (\$teacher_users as \$user) {
+            \$response_data['teachers'][] = array(
+                'id'    => (string)\$user->ID,
+                'name'  => \$user->display_name,
                 'role'  => 'Teacher',
-                'email' => \\$user->user_email,
-                'phone' => get_user_meta(\\$user->ID, 'mobile', true),
-                'profilePhotoUrl' => get_custom_user_photo_url(\\$user->ID),
+                'email' => \$user->user_email,
+                'phone' => get_user_meta(\$user->ID, 'mobile', true),
+                'profilePhotoUrl' => get_custom_user_photo_url(\$user->ID),
             );
         }
 
         // Fetch Classes
-        \\$response_data['classes'] = fetch_class_data_from_db();
+        \$response_data['classes'] = fetch_class_data_from_db();
 
-        return new WP_REST_Response(\\$response_data, 200);
+        return new WP_REST_Response(\$response_data, 200);
     }
 }
 
 // Callback function for POST /attendance
 if (!function_exists('receive_attendance_data')) {
-    function receive_attendance_data(\\$request) {
-        global \\$wpdb;
-        \\$params = \\$request->get_json_params();
-        \\$attendance_table = \\$wpdb->prefix . 'smgt_attendence';
+    function receive_attendance_data(\$request) {
+        global \$wpdb;
+        \$params = \$request->get_json_params();
+        \$attendance_table = \$wpdb->prefix . 'smgt_attendence';
 
-        if (isset(\\$params['students']) && is_array(\\$params['students'])) {
-            foreach (\\$params['students'] as \\$student_record) {
-                 \\$wpdb->insert(\\$attendance_table, array(
-                    'user_id' => \\$student_record['id'],
-                    'attendence_date' => (new DateTime(\\$student_record['timestamp']))->format('Y-m-d'),
+        if (isset(\$params['students']) && is_array(\$params['students'])) {
+            foreach (\$params['students'] as \$student_record) {
+                 \$wpdb->insert(\$attendance_table, array(
+                    'user_id' => \$student_record['id'],
+                    'attendence_date' => (new DateTime(\$student_record['timestamp']))->format('Y-m-d'),
                     'status' => 'Present',
                     'attendence_by' => 1, // Default to admin user
                     'role_name' => 'student'
@@ -1512,13 +1512,13 @@ if (!function_exists('receive_attendance_data')) {
             }
         }
         
-        if (isset(\\$params['teachers']) && is_array(\\$params['teachers'])) {
-            foreach (\\$params['teachers'] as \\$teacher_record) {
-                \\$wpdb->insert(\\$attendance_table, array(
-                    'user_id' => \\$teacher_record['teacherId'],
-                    'attendence_date' => \\$teacher_record['date'],
-                    'status' => \\$teacher_record['status'],
-                    'comment' => \\$teacher_record['comment'],
+        if (isset(\$params['teachers']) && is_array(\$params['teachers'])) {
+            foreach (\$params['teachers'] as \$teacher_record) {
+                \$wpdb->insert(\$attendance_table, array(
+                    'user_id' => \$teacher_record['teacherId'],
+                    'attendence_date' => \$teacher_record['date'],
+                    'status' => \$teacher_record['status'],
+                    'comment' => \$teacher_record['comment'],
                     'attendence_by' => 1, // Default to admin user
                     'role_name' => 'teacher'
                 ));
@@ -1531,21 +1531,21 @@ if (!function_exists('receive_attendance_data')) {
 
 // Callback for POST /classes
 if (!function_exists('add_new_class_data')) {
-    function add_new_class_data(\\$request) {
-        global \\$wpdb;
-        \\$params = \\$request->get_json_params();
-        \\$class_table = \\$wpdb->prefix . 'smgt_class';
+    function add_new_class_data(\$request) {
+        global \$wpdb;
+        \$params = \$request->get_json_params();
+        \$class_table = \$wpdb->prefix . 'smgt_class';
 
-        \\$data_to_insert = array(
-            'class_name' => sanitize_text_field(\\$params['class_name']),
-            'class_num_value' => intval(\\$params['class_numeric']),
-            'section_name' => serialize(\\$params['class_section']), // Serialize array for storage
-            'class_capacity' => intval(\\$params['class_capacity']),
+        \$data_to_insert = array(
+            'class_name' => sanitize_text_field(\$params['class_name']),
+            'class_numeric' => intval(\$params['class_numeric']),
+            'section_name' => serialize(\$params['class_section']), // Serialize array for storage
+            'class_capacity' => intval(\$params['class_capacity']),
         );
 
-        \\$result = \\$wpdb->insert(\\$class_table, \\$data_to_insert);
+        \$result = \$wpdb->insert(\$class_table, \$data_to_insert);
 
-        if (\\$result === false) {
+        if (\$result === false) {
             return new WP_Error('db_error', 'Could not add class to the database.', array('status' => 500));
         }
 
@@ -1555,17 +1555,17 @@ if (!function_exists('add_new_class_data')) {
 
 // Callback for DELETE /classes/{id}
 if (!function_exists('delete_class_data')) {
-    function delete_class_data(\\$request) {
-        global \\$wpdb;
-        \\$class_id = (int) \\$request['id'];
-        \\$class_table = \\$wpdb->prefix . 'smgt_class';
+    function delete_class_data(\$request) {
+        global \$wpdb;
+        \$class_id = (int) \$request['id'];
+        \$class_table = \$wpdb->prefix . 'smgt_class';
 
-        \\$result = \\$wpdb->delete(\\$class_table, array('class_id' => \\$class_id), array('%d'));
+        \$result = \$wpdb->delete(\$class_table, array('class_id' => \$class_id), array('%d'));
 
-        if (\\$result === false) {
+        if (\$result === false) {
              return new WP_Error('db_error', 'Could not delete class from the database.', array('status' => 500));
         }
-        if (\\$result === 0) {
+        if (\$result === 0) {
             return new WP_Error('not_found', 'Class with the specified ID was not found.', array('status' => 404));
         }
 
@@ -1611,12 +1611,12 @@ add_action('admin_init', function() {
 
 if (!function_exists('qr_app_secret_key_callback')) {
     function qr_app_secret_key_callback() {
-        \\$option = get_option('qr_app_secret_key');
-        echo '<input type="text" id="qr_app_secret_key" name="qr_app_secret_key" value="' . esc_attr(\\$option) . '" size="50" />';
+        \$option = get_option('qr_app_secret_key');
+        echo '<input type="text" id="qr_app_secret_key" name="qr_app_secret_key" value="' . esc_attr(\$option) . '" size="50" />';
         echo '<p class="description">Enter a strong, unique secret key for the app to use. This must match the key entered in the app.</p>';
     }
 }
-?>\\\`;
+?>\`;
 
 const HtaccessCode = ({ code }: { code: string }) => {
     const [copyText, setCopyText] = useState('Copy Code');
@@ -1745,7 +1745,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
         }
         try {
             await addUser({ email: newUserEmail, password: newUserPassword, role: 'user' });
-            setUserMessage({ type: 'success', text: \\\`User \${newUserEmail} added successfully.\\\` });
+            setUserMessage({ type: 'success', text: \`User \${newUserEmail} added successfully.\` });
             setNewUserEmail('');
             setNewUserPassword('');
             await fetchUsers();
@@ -1757,11 +1757,11 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
     };
 
     const handleDeleteUser = async (email: string) => {
-        if (window.confirm(\\\`Are you sure you want to delete user \${email}?\\\`)) {
+        if (window.confirm(\`Are you sure you want to delete user \${email}?\`)) {
             setUserMessage(null);
             try {
                 await deleteUser(email);
-                setUserMessage({ type: 'success', text: \\\`User \${email} has been deleted.\\\` });
+                setUserMessage({ type: 'success', text: \`User \${email} has been deleted.\` });
                 await fetchUsers();
             } catch (error) {
                 const msg = error instanceof Error ? error.message : 'Failed to delete user.';
@@ -1826,7 +1826,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                 <div className="p-6 bg-white rounded-lg shadow-lg space-y-6">
                      <h3 className="text-lg font-semibold text-slate-800 border-b pb-3 flex items-center gap-2"><UsersIcon className="w-5 h-5"/> User Management</h3>
                      {userMessage && (
-                        <div className={\\\`p-3 rounded-md text-sm \${userMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}\\\`}>
+                        <div className={\`p-3 rounded-md text-sm \${userMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}\`}>
                             {userMessage.text}
                         </div>
                      )}
@@ -2218,13 +2218,13 @@ const InfoModal: React.FC<InfoModalProps> = ({ title, onClose, children }) => {
                     </button>
                 </div>
             </div>
-            <style>{\\\`
+            <style>{\`
                 @keyframes fade-in-scale {
                     from { opacity: 0; transform: scale(0.95); }
                     to { opacity: 1; transform: scale(1); }
                 }
                 .animate-fade-in-scale { animation: fade-in-scale 0.2s ease-out forwards; }
-            \\\`}</style>
+            \`}</style>
         </div>
     );
 };
@@ -2304,7 +2304,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 rounded-full hover:bg-slate-100 p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                             >
-                                <div className={\\\`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden \${isSuperUser ? 'bg-white border border-slate-200' : 'bg-indigo-700'}\\\`}>
+                                <div className={\`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden \${isSuperUser ? 'bg-white border border-slate-200' : 'bg-indigo-700'}\`}>
                                     {renderAvatar()}
                                 </div>
                                 <ChevronDownIcon className="w-5 h-5 text-slate-500" />
@@ -2343,7 +2343,7 @@ export default Header;`,
 import React, { useState, useEffect } from 'react';
 import type { ClassData, AddClassPayload } from '../types';
 import { getClasses, addClass, deleteClass } from '../api';
-import { BookOpenIcon, PlusIcon, SpinnerIcon, TrashIcon } from './icons';
+import { BookOpenIcon, PlusIcon, SpinnerIcon, TrashIcon, UsersIcon, ExclamationCircleIcon, DotsVerticalIcon } from './icons';
 
 interface ClassManagerProps {
     initialClasses: ClassData[];
@@ -2358,12 +2358,12 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
-        if (!initialClasses.length) {
-            fetchClassData();
-        }
+        // Fetch fresh data on component mount to ensure it's up-to-date
+        fetchClassData();
     }, []);
 
     useEffect(() => {
+        // This keeps the component in sync if a global refresh happens
         setClasses(initialClasses);
     }, [initialClasses]);
 
@@ -2384,9 +2384,9 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
         try {
             await addClass(payload, secretKey);
             setIsModalOpen(false);
-            onDataChange(); 
+            onDataChange(); // Trigger global sync to get all data again
         } catch (err) {
-            throw err; 
+            throw err; // Let the modal handle the error display
         }
     };
 
@@ -2394,7 +2394,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
         if (window.confirm("Are you sure you want to delete this class? This action cannot be undone.")) {
             try {
                 await deleteClass(classId, secretKey);
-                onDataChange(); 
+                onDataChange(); // Trigger global sync
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to delete class.");
             }
@@ -2461,7 +2461,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{cls.class_name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatSection(cls.class_section)}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{cls.class_numeric}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{\\\`\${cls.student_count || 0} Out Of \${cls.class_capacity}\\\`}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{\`\${cls.student_count || 0} Out Of \${cls.class_capacity}\`}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button 
                                         onClick={() => handleDeleteClass(cls.id)} 
@@ -2482,6 +2482,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
     );
 };
 
+// AddClassModal sub-component
 const AddClassModal: React.FC<{onClose: () => void, onAddClass: (payload: AddClassPayload) => Promise<void>}> = ({ onClose, onAddClass }) => {
     const [name, setName] = useState('');
     const [numeric, setNumeric] = useState('');
@@ -2556,6 +2557,7 @@ const AddClassModal: React.FC<{onClose: () => void, onAddClass: (payload: AddCla
         </div>
     );
 };
+
 
 export default ClassManager;`,
 };
