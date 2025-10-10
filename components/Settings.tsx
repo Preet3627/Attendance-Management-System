@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getUsers, addUser, deleteUser } from '../api';
 import type { User } from '../types';
-import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon, DownloadIcon } from './icons';
+import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon, DownloadIcon, InformationCircleIcon } from './icons';
 
 const PLUGIN_CODE = `<?php
 /*
@@ -365,7 +365,7 @@ const WordPressPluginCode = ({ name, code, version }: { name: string, code: stri
     };
 
     return (
-        <div className="p-6 bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 space-y-6">
+        <div className="p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 space-y-6">
             <div className="border-b border-slate-300/50 dark:border-slate-700/50 pb-3 flex flex-col sm:flex-row justify-between items-center gap-2">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <ClipboardIcon className="w-5 h-5"/> {name} (v{version})
@@ -373,14 +373,14 @@ const WordPressPluginCode = ({ name, code, version }: { name: string, code: stri
                 <div className="flex items-center gap-2">
                     <button
                         onClick={handleCopy}
-                        className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600"
+                        className="inline-flex items-center gap-2 px-3 py-1 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-slate-700/70 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
                     >
                         <ClipboardIcon className="w-4 h-4"/>
                         {copyText}
                     </button>
                     <button
                         onClick={handleDownload}
-                        className="inline-flex items-center gap-2 px-3 py-1 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-purple-600 hover:bg-purple-700"
+                        className="inline-flex items-center gap-2 px-3 py-1 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-purple-600 hover:bg-purple-700 transition-all duration-300 transform hover:scale-105"
                     >
                         <DownloadIcon className="w-4 h-4"/>
                         Download File
@@ -492,7 +492,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
 
     return (
         <div className="space-y-8">
-            <div className="p-6 bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 space-y-6">
+            <div className="p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 space-y-6">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 border-b border-slate-300/50 dark:border-slate-700/50 pb-3">{initialSetup ? 'Initial API Key Setup' : 'API Key Settings'}</h3>
                 {initialSetup && (
                     <div className="bg-blue-100/80 dark:bg-blue-900/40 border-l-4 border-blue-500 text-blue-700 dark:text-blue-200 p-4 rounded-lg" role="alert">
@@ -514,17 +514,23 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
                          <button
                             onClick={handleSave}
                             disabled={isSaving || !secretKey.trim()}
-                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:bg-purple-400 disabled:cursor-wait"
+                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:bg-purple-400 disabled:cursor-wait transition-all duration-300 transform hover:scale-105"
                         >
                             {isSaving ? <><SpinnerIcon className="w-5 h-5 mr-2" /> Saving...</> : 'Save Key'}
                         </button>
+                    </div>
+                    <div className="flex items-start gap-2 pt-2">
+                        <InformationCircleIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                           The API key is stored locally on this device's browser. You will need to enter it again if you use a different device or clear your browser data.
+                        </p>
                     </div>
                 </div>
                  {!initialSetup && onLogout && (
                      <div className="border-t border-slate-300/50 dark:border-slate-700/50 pt-6">
                         <button
                             onClick={onLogout}
-                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-red-300 dark:border-red-600 text-sm font-medium rounded-xl shadow-sm text-red-700 dark:text-red-400 bg-white dark:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-red-300 dark:border-red-600 text-sm font-medium rounded-xl shadow-sm text-red-700 dark:text-red-400 bg-white dark:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                         >
                            <LogoutIcon className="w-5 h-5 mr-2" /> Log Out
                         </button>
@@ -535,7 +541,7 @@ const Settings: React.FC<SettingsProps> = ({ onSaveKey, onLogout, secretKey: ini
             <WordPressPluginCode name={pluginInfo.name} code={pluginInfo.code} version={pluginInfo.version} />
 
             {currentUser.role === 'superuser' && (
-                 <div className="p-6 bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 space-y-6">
+                 <div className="p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 space-y-6">
                      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 border-b border-slate-300/50 dark:border-slate-700/50 pb-3 flex items-center gap-2"><UsersIcon className="w-5 h-5"/> User Management</h3>
                      {userMessage && (
                         <div className={`p-3 rounded-lg text-sm ${userMessage.type === 'success' ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200'}`}>

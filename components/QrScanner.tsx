@@ -1,10 +1,15 @@
-
 import React, { useEffect, useRef } from 'react';
 import type { QrScanResult } from '../types';
 
 declare global {
     interface Window {
         Html5QrcodeScanner: any;
+        Html5QrcodeScannerState?: {
+            NOT_STARTED: 0,
+            SCANNING: 1,
+            SUCCESS: 2,
+            UNKNOWN: 3
+        }
     }
 }
 
@@ -34,10 +39,13 @@ const QrScanner: React.FC<QrScannerProps> = ({ onScanSuccess, onScanError }) => 
 
         return () => {
             if (scannerRef.current) {
-                scannerRef.current.clear().catch((error: Error) => {
-                    // This can fail if the scanner is already cleared. We can ignore this error.
-                    console.warn("Failed to clear html5-qrcode-scanner on unmount. This is expected if it was already stopped.", error);
-                });
+                // Check if scanner is in a state where it can be cleared
+                const state = scannerRef.current.getState();
+                if (state && state !== 1 /* NOT_STARTED */) {
+                    scannerRef.current.clear().catch((error: Error) => {
+                        console.warn("Failed to clear html5-qrcode-scanner on unmount.", error);
+                    });
+                }
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps

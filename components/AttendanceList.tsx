@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { StudentAttendanceRecord } from '../types';
 import { CheckCircleIcon, UserIcon } from './icons';
@@ -29,7 +28,7 @@ const AttendanceList: React.FC<AttendanceListProps> = ({ records }) => {
                         </thead>
                         <tbody className="divide-y divide-slate-200/50 dark:divide-slate-700/50">
                             {records.map((record) => (
-                                <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                <tr key={record.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center space-x-3">
                                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">

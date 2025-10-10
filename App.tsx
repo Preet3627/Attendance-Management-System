@@ -17,7 +17,7 @@ import Login from './components/Login';
 import ScanSuccessModal from './components/ScanSuccessModal';
 import Header from './components/Header';
 import ClassManager from './components/ClassManager';
-import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, DownloadIcon, BookOpenIcon } from './components/icons';
+import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, BookOpenIcon } from './components/icons';
 
 type View = 'qr_attendance' | 'teacher_attendance' | 'class_management' | 'data_viewer' | 'settings';
 type Theme = 'light' | 'dark';
@@ -239,11 +239,11 @@ const App: React.FC = () => {
         return (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                 <div className="space-y-6">
-                    <div className="p-6 bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20">
+                    <div className="p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20">
                         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">QR Code Scanner</h3>
                         <button
                             onClick={() => setIsScanning(!isScanning)}
-                            className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                            className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl shadow-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-300 transform hover:scale-105"
                         >
                             {isScanning ? <><StopIcon className="w-5 h-5 mr-2" /> Stop Scanner</> : <><CameraIcon className="w-5 h-5 mr-2" /> Start Scanner</>}
                         </button>
@@ -252,13 +252,13 @@ const App: React.FC = () => {
                     </div>
                     <DataControls onSync={() => handleSync()} />
                 </div>
-                <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20">
+                <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20">
                     <div className="border-b border-slate-300/50 dark:border-slate-700/50">
                          <nav className="-mb-px flex space-x-6 px-6" aria-label="Tabs">
-                            <button onClick={() => setLogView('students')} className={`${logView === 'students' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:border-slate-300 dark:hover:text-slate-200 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+                            <button onClick={() => setLogView('students')} className={`${logView === 'students' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:border-slate-300 dark:hover:text-slate-200 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>
                                 Student Log ({attendanceRecords.length})
                             </button>
-                            <button onClick={() => setLogView('teachers')} className={`${logView === 'teachers' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:border-slate-300 dark:hover:text-slate-200 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+                            <button onClick={() => setLogView('teachers')} className={`${logView === 'teachers' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:border-slate-300 dark:hover:text-slate-200 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>
                                 Teacher Log ({teacherScanRecords.length})
                             </button>
                          </nav>
@@ -287,7 +287,7 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen font-sans text-slate-800 dark:text-slate-200">
+        <div className="min-h-screen font-sans text-slate-800 dark:text-slate-200 transition-colors">
             {lastScannedInfo && (
                 <ScanSuccessModal 
                     person={lastScannedInfo.person} 
@@ -309,7 +309,7 @@ const App: React.FC = () => {
                         <select
                             id="tabs"
                             name="tabs"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-xl backdrop-blur-lg"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-800/60 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-xl backdrop-blur-xl"
                             onChange={(e) => setView(e.target.value as View)}
                             value={view}
                         >

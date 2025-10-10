@@ -33,11 +33,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center p-4">
-            <div className="max-w-md w-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 space-y-6">
+            <div className="max-w-md w-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 space-y-6">
                 <div className="flex flex-col items-center space-y-4">
                     <SchoolLogo className="h-20" />
                     <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-slate-100">
-                        Student Attendance
+                        PM SHRI PONSRI Attendance
                     </h2>
                 </div>
                 <form className="space-y-6" onSubmit={handleSubmit}>
@@ -51,7 +51,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="appearance-none relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                            className="appearance-none relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
                             placeholder="Email address"
                         />
                     </div>
@@ -65,7 +65,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="appearance-none relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                            className="appearance-none relative block w-full px-3 py-3 border border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
                             placeholder="Password"
                         />
                     </div>
@@ -78,7 +78,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLoginSuccess }) => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:bg-purple-400 disabled:cursor-wait"
+                            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:bg-purple-400 disabled:cursor-wait transition-all duration-300 transform hover:scale-105"
                         >
                             {isLoading ? <SpinnerIcon className="h-5 w-5" /> : 'Sign in'}
                         </button>

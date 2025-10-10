@@ -2,12 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Attendance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Student Attendance - PM SHRI PONSRI</title>
     <link rel="icon" href="https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png" type="image/png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ponsri Attendance">
     <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // Polyfill for html5-qrcode
@@ -32,11 +34,9 @@
       }
 
       @media screen {
-        /* Hide the dedicated print container on screen */
-        #print-root {
-          display: none;
-        }
+        #print-root { display: none; }
       }
+
       @media print {
         @page {
           size: A4 portrait;
@@ -46,42 +46,37 @@
         body {
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
-          background-image: none;
+          background-image: none !important;
+          background-color: #ffffff !important;
         }
         
-        /* Hide the main app content when printing */
-        body > #root {
-          display: none;
-        }
-        
-        /* Show the dedicated print container */
-        #print-root {
-          display: block;
-        }
+        body > #root { display: none; }
+        #print-root { display: block; }
 
         .id-card-print-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10mm;
+            grid-template-columns: 1fr;
+            row-gap: 15mm;
             justify-items: center;
             align-content: start;
         }
-        
-        /* Ensure only 2 cards per page */
-        .id-card-print-container > div:nth-child(2n) {
-          page-break-after: always;
-        }
 
-        .portrait-card {
-            width: 85.6mm;
-            height: 54mm; /* Swapped for landscape on portrait page */
-            border: 1px dashed #999; /* Cut lines */
-            overflow: hidden;
+        .id-card-print-container > div:nth-child(2n) {
+            page-break-after: always;
+        }
+        .id-card-print-container > div:last-child {
+            page-break-after: auto;
         }
 
         .landscape-card {
-            width: 85.6mm;
-            height: 54mm;
+            width: 180mm;
+            height: 120mm;
+            border: 1px dashed #999; /* Cut lines */
+            overflow: hidden;
+        }
+        .portrait-card {
+            width: 120mm;
+            height: 180mm;
             border: 1px dashed #999; /* Cut lines */
             overflow: hidden;
         }

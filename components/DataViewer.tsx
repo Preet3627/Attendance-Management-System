@@ -55,8 +55,12 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) 
     const peopleToPrint = useMemo(() => {
         if (view === 'teachers') return teachers;
         if (selectedPrintClass === 'all') return filteredStudents;
-        return groupedStudents?.[selectedPrintClass] || [];
-    }, [view, selectedPrintClass, filteredStudents, groupedStudents, teachers]);
+        const selectedClassId = classes.find(c => formatClassName(c.class_name) === selectedPrintClass)?.id;
+        if (selectedClassId) {
+             return filteredStudents.filter(s => s.class === selectedClassId);
+        }
+        return [];
+    }, [view, selectedPrintClass, filteredStudents, teachers, classes]);
 
     const type = view === 'students' ? 'student' : 'teacher';
     
@@ -80,7 +84,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) 
             const displayClassName = classInfo ? formatClassName(classInfo.class_name) : 'Unassigned';
 
             return (
-                <tr key={student.studentId}>
+                <tr key={student.studentId} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
                     {photoCell}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{student.studentId}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-50">{student.studentName}</td>
@@ -93,7 +97,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) 
         if (view === 'teachers' && 'id' in person) {
             const teacher = person as Teacher;
             return (
-                <tr key={teacher.id}>
+                <tr key={teacher.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
                     {photoCell}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{teacher.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-50">{teacher.name}</td>
@@ -114,14 +118,14 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) 
                 <p>To change a student or teacher's photo, please log in to your WordPress admin account, navigate to the user's profile, and upload a new avatar there. The changes will appear in this app after the next data sync.</p>
             </InfoModal>
         )}
-        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20">
+        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20">
             <div className="p-4 border-b border-slate-300/50 dark:border-slate-700/50 flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div className="flex items-center gap-4">
                      <div className="sm:hidden">
                         <select
                             id="tabs-mobile"
                             name="tabs-mobile"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-xl"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-xl backdrop-blur-lg"
                             onChange={(e) => setView(e.target.value as 'students' | 'teachers')}
                             value={view}
                         >
@@ -146,9 +150,9 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) 
                             <select
                                 value={selectedPrintClass}
                                 onChange={(e) => setSelectedPrintClass(e.target.value)}
-                                className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-xl"
+                                className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-xl backdrop-blur-lg"
                             >
-                                <option value="all">Print All Classes</option>
+                                <option value="all">Print All Students</option>
                                 {Object.keys(groupedStudents).map(className => (
                                     <option key={className} value={className}>{`Print ${className}`}</option>
                                 ))}
@@ -168,7 +172,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) 
                     </div>
                     <button
                         onClick={handlePrint}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 flex-shrink-0 h-full"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 flex-shrink-0 h-full transition-all duration-300 transform hover:scale-105"
                     >
                         <IdentificationIcon className="w-5 h-5" />
                         Print ID Cards
