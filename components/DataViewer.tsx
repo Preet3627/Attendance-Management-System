@@ -55,12 +55,21 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) 
     const peopleToPrint = useMemo(() => {
         if (view === 'teachers') return teachers;
         if (selectedPrintClass === 'all') return filteredStudents;
-        const selectedClassId = classes.find(c => formatClassName(c.class_name) === selectedPrintClass)?.id;
-        if (selectedClassId) {
-             return filteredStudents.filter(s => s.class === selectedClassId);
+    
+        if (selectedPrintClass === 'Unassigned Students') {
+            // Filter for students whose class id is not in the classMap or is missing
+            return filteredStudents.filter(s => !s.class || !classMap.has(s.class));
         }
+        
+        // Find the class object that corresponds to the formatted class name
+        const targetClass = classes.find(c => formatClassName(c.class_name) === selectedPrintClass);
+        
+        if (targetClass) {
+            return filteredStudents.filter(s => s.class === targetClass.id);
+        }
+    
         return [];
-    }, [view, selectedPrintClass, filteredStudents, teachers, classes]);
+    }, [view, selectedPrintClass, filteredStudents, teachers, classes, classMap]);
 
     const type = view === 'students' ? 'student' : 'teacher';
     
@@ -214,13 +223,13 @@ const DataViewer: React.FC<DataViewerProps> = ({ students, teachers, classes }) 
                                     );
                                 })
                             ) : (
-                                <tr><td colSpan={tableHeaders.length} className="text-center text-slate-500 py-8">No student data available.</td></tr>
+                                <tr><td colSpan={tableHeaders.length} className="text-center text-slate-500 dark:text-slate-400 py-8">No student data available.</td></tr>
                             )
                         ) : (
                             teachers.length > 0 ? (
                                 teachers.map(teacher => renderTableRow(teacher))
                             ) : (
-                                <tr><td colSpan={tableHeaders.length} className="text-center text-slate-500 py-8">No teacher data available.</td></tr>
+                                <tr><td colSpan={tableHeaders.length} className="text-center text-slate-500 dark:text-slate-400 py-8">No teacher data available.</td></tr>
                             )
                         )}
                     </tbody>

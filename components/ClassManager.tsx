@@ -68,56 +68,56 @@ const ClassManager: React.FC<ClassManagerProps> = ({ initialClasses, secretKey, 
                 onAddClass={handleAddClass}
             />
         )}
-        <div className="bg-white rounded-lg shadow-lg">
-            <div className="p-4 sm:p-6 border-b flex flex-col sm:flex-row justify-between items-center gap-4">
-                <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20">
+            <div className="p-4 sm:p-6 border-b border-slate-300/50 dark:border-slate-700/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <BookOpenIcon className="w-6 h-6" /> Class Management
                 </h2>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-300 transform hover:scale-105"
                 >
                     <PlusIcon className="w-5 h-5" />
                     Add New Class
                 </button>
             </div>
 
-            {error && <p className="m-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>}
+            {error && <p className="m-4 text-sm text-red-600 dark:text-red-300 bg-red-100/80 dark:bg-red-900/40 p-3 rounded-lg">{error}</p>}
             
             <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
+                <table className="min-w-full divide-y divide-slate-200/50 dark:divide-slate-700/50">
+                    <thead className="bg-slate-50/70 dark:bg-slate-900/70 backdrop-blur-sm">
                         <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Class Name</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Section</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Class Numeric Value</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Capacity</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Class Name</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Section</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Class Numeric Value</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Student Capacity</th>
                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Action</span></th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
+                    <tbody className="divide-y divide-slate-200/50 dark:divide-slate-700/50">
                         {isLoading ? (
-                             <tr><td colSpan={5} className="text-center py-12"><SpinnerIcon className="w-8 h-8 mx-auto text-indigo-600" /></td></tr>
+                             <tr><td colSpan={5} className="text-center py-12"><SpinnerIcon className="w-8 h-8 mx-auto text-purple-600" /></td></tr>
                         ) : !classes || classes.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="text-center text-slate-500 py-12 px-6">
+                                <td colSpan={5} className="text-center text-slate-500 dark:text-slate-400 py-12 px-6">
                                     <div className="flex flex-col items-center">
-                                        <BookOpenIcon className="w-12 h-12 text-slate-300" />
+                                        <BookOpenIcon className="w-12 h-12 text-slate-300 dark:text-slate-600" />
                                         <p className="font-semibold mt-2">No classes found.</p>
                                         <p className="text-sm">Sync with the server or add a new class to begin.</p>
                                     </div>
                                 </td>
                             </tr>
                         ) : classes.map((cls) => (
-                            <tr key={cls.id} className="hover:bg-slate-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{cls.class_name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatSection(cls.class_section)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{displayWithFallback(cls.class_numeric, 'No Section')}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{`${cls.student_count || 0} Out Of ${cls.class_capacity}`}</td>
+                            <tr key={cls.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-50">{cls.class_name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{formatSection(cls.class_section)}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{displayWithFallback(cls.class_numeric, 'No Section')}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{`${cls.student_count || 0} Out Of ${cls.class_capacity}`}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button 
                                         onClick={() => handleDeleteClass(cls.id)} 
-                                        className="text-slate-400 hover:text-red-600 p-1 rounded-full transition-colors"
+                                        className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 p-1 rounded-full transition-colors"
                                         title="Delete Class"
                                     >
                                         <TrashIcon className="w-5 h-5" />
@@ -172,35 +172,35 @@ const AddClassModal: React.FC<{onClose: () => void, onAddClass: (payload: AddCla
     };
     
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-lg w-full border border-white/20">
                 <form onSubmit={handleSubmit}>
-                    <div className="p-6 border-b">
-                        <h3 className="text-lg font-semibold text-slate-800">Add New Class</h3>
+                    <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+                        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Add New Class</h3>
                     </div>
-                    <div className="p-6 space-y-4">
-                        {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>}
+                    <div className="p-6 space-y-4 bg-white dark:bg-slate-900/50">
+                        {error && <p className="text-sm text-red-600 dark:text-red-300 bg-red-100 dark:bg-red-900/40 p-3 rounded-lg">{error}</p>}
                         <div>
-                            <label htmlFor="class_name" className="block text-sm font-medium text-slate-700">Class Name</label>
-                            <input type="text" id="class_name" value={name} onChange={e => setName(e.target.value)} required className="mt-1 w-full border-slate-300 rounded-md shadow-sm"/>
+                            <label htmlFor="class_name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Class Name</label>
+                            <input type="text" id="class_name" value={name} onChange={e => setName(e.target.value)} required className="mt-1 w-full border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 rounded-xl shadow-sm focus:ring-purple-500 focus:border-purple-500"/>
                         </div>
                          <div>
-                            <label htmlFor="class_numeric" className="block text-sm font-medium text-slate-700">Class Numeric Value</label>
-                            <input type="number" id="class_numeric" value={numeric} onChange={e => setNumeric(e.target.value)} required className="mt-1 w-full border-slate-300 rounded-md shadow-sm"/>
+                            <label htmlFor="class_numeric" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Class Numeric Value</label>
+                            <input type="number" id="class_numeric" value={numeric} onChange={e => setNumeric(e.target.value)} required className="mt-1 w-full border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 rounded-xl shadow-sm focus:ring-purple-500 focus:border-purple-500"/>
                         </div>
                         <div>
-                            <label htmlFor="class_section" className="block text-sm font-medium text-slate-700">Sections</label>
-                            <input type="text" id="class_section" value={sections} onChange={e => setSections(e.target.value)} required className="mt-1 w-full border-slate-300 rounded-md shadow-sm"/>
-                            <p className="text-xs text-slate-500 mt-1">Enter comma-separated values for multiple sections (e.g., A, B, C).</p>
+                            <label htmlFor="class_section" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Sections</label>
+                            <input type="text" id="class_section" value={sections} onChange={e => setSections(e.target.value)} required className="mt-1 w-full border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 rounded-xl shadow-sm focus:ring-purple-500 focus:border-purple-500"/>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Enter comma-separated values for multiple sections (e.g., A, B, C).</p>
                         </div>
                          <div>
-                            <label htmlFor="class_capacity" className="block text-sm font-medium text-slate-700">Student Capacity</label>
-                            <input type="number" id="class_capacity" value={capacity} onChange={e => setCapacity(e.target.value)} required className="mt-1 w-full border-slate-300 rounded-md shadow-sm"/>
+                            <label htmlFor="class_capacity" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Student Capacity</label>
+                            <input type="number" id="class_capacity" value={capacity} onChange={e => setCapacity(e.target.value)} required className="mt-1 w-full border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 rounded-xl shadow-sm focus:ring-purple-500 focus:border-purple-500"/>
                         </div>
                     </div>
-                    <div className="px-6 py-3 bg-slate-50 flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Cancel</button>
-                        <button type="submit" disabled={isAdding} className="px-4 py-2 text-sm font-medium text-white bg-indigo-700 border border-transparent rounded-md shadow-sm hover:bg-indigo-800 disabled:bg-indigo-400">
+                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 flex justify-end gap-3 rounded-b-2xl">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-slate-700/70 border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600">Cancel</button>
+                        <button type="submit" disabled={isAdding} className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-xl shadow-sm hover:bg-purple-700 disabled:bg-purple-400 transition-colors">
                             {isAdding ? <SpinnerIcon className="w-5 h-5"/> : 'Add Class'}
                         </button>
                     </div>
