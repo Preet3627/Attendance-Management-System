@@ -1320,48 +1320,259 @@ export default DataViewer;`,
 import React, { useState, useEffect } from 'react';
 import { getUsers, addUser, deleteUser } from '../api';
 import type { User } from '../types';
-import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon, CloudDownloadIcon } from './icons';
+import { LogoutIcon, SpinnerIcon, UsersIcon, ClipboardIcon, CloudDownloadIcon, DownloadIcon } from './icons';
 
-// --- EMBEDDED STATIC SITE CODE ---
-// This is a pre-bundled version of the application for easy, reliable deployment.
-const HTML_CODE = \\\`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Attendance</title>
-    <link rel="icon" href="https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png" type="image/png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>if (typeof global === 'undefined') { var global = window; }</script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <style>
-      @media screen { #print-root { display: none; } }
-      @media print {
-        @page { size: A4; margin: 1cm; }
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body > #root { display: none; }
-        #print-root { display: block; }
-        .id-card-print-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; justify-items: center; }
-        .portrait-card { width: 54mm; height: 85.6mm; border: 1px dashed #ccc; page-break-inside: avoid; overflow: hidden; }
-        .landscape-card { width: 85.6mm; height: 54mm; border: 1px dashed #ccc; page-break-inside: avoid; overflow: hidden; }
-      }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-    <div id="print-root"></div>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossOrigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossOrigin></script>
-    <script>var QRCode={default:window.QRCode};</script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.react/3.1.0/qrcode.react.min.js"></script>
-    <script>
-      window.React=React;
-      window.ReactDOM=ReactDOM;
-      window.QRCodeReact=QRCode.default;
-      window.Html5Qrcode=Html5Qrcode;
-    </script>
-    <script src="bundle.js" defer></script>
-</body>
-</html>\\\`;
+const PLUGIN_CODE = \`<?php
+/*
+Plugin Name: Custom Data Sync for QR Attendance App
+Description: Provides a secure REST API endpoint to sync student, teacher, and class data for the QR attendance app.
+Version: 2.2
+Author: QR App Support
+*/
 
-const JS_BUNDLE_CODE = \\\`var app=(()=>{var T={432:e=>{e.exports=React},724:e=>{e.exports=ReactDOM},648:e=>{e.exports=QRCodeReact}},S={};function r(e){var t=S[e];if(void 0!==t)return t.exports;var n=S[e]={exports:{}};return T[e](n,n.exports,r),n.exports}r.d=(e,t)=>{for(var n in t)r.o(t,n)&&!r.o(e,n)&&Object.defineProperty(e,n,{enumerable:!0,get:t[n]})},r.o=(e,t)=>Object.prototype.hasOwnProperty.call(e,t),r.r=e=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})};var t={};return(()=>{r.r(t),r.d(t,{default:()=>Ne});var e=r(432),n=r.d(e,e),o=r(724);const a=async(e,t,n={})=>{const o=new Headers(n.headers||{});o.set("Content-Type","application/json"),o.set("X-Sync-Key",t);const a=await fetch("https://ponsrischool.in/wp-json/custom-sync/v1".concat(e),{...n,headers:o});if(!a.ok){const e=await a.json().catch(()=>({message:a.statusText}));throw new Error(e.message||"An unknown API error occurred")}const s=await a.text();return s?JSON.parse(s):null},s=async e=>await a("/data",e,{method:"GET"}),i=async(e,t)=>{const n=e.map((e=>({id:e.id,timestamp:e.timestamp.toISOString()})));return await a("/attendance",t,{method:"POST",body:JSON.stringify({students:n})}),!0},c=async(e,t)=>{await a("/attendance",t,{method:"POST",body:JSON.stringify({teachers:e})})},l=e=>e&&"null"!==e.toLowerCase()?e.split("=>").map((e=>e.trim())).length>=2&&e.split("=>").map((e=>e.trim()))[0]&&e.split("=>").map((e=>e.trim()))[1]?"Class ".concat(e.split("=>").map((e=>e.trim()))[0],"-").concat(e.split("=>").map((e=>e.trim()))[1]):1===e.split("=>").map((e=>e.trim())).length&&e.split("=>").map((e=>e.trim()))[0]?"Class ".concat(e.split("=>").map((e=>e.trim()))[0]):e.split("=>")[0]||"N/A":"N/A",d=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M12 4v1m6 11h2m-6.5 6.5v2M4.5 12.5h-2M18 18.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM8.5 18.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18.5 8.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM8.5 8.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM4 4h4v4H4V4zM4 16h4v4H4v-4zM16 4h4v4h-4V4zM16 16h4v4h-4v-4z"})),p=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"}),e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M15 13a3 3 0 11-6 0 3 3 0 016 0z"})),u=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M5 5h14v14H5V5z"})),m=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"})),h=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"})),g=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"})),f=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"})),b=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 21a6 6 0 006-6v-1a3 3 0 00-3-3H9a3 3 0 00-3 3v1a6 6 0 006 6z"})),v=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h4a2 2 0 012 2v1m-4 0h4m-9 4h2m-2 4h4m-4 4h4m4-8h4m-4 4h4m-4 4h4"})),w=({className:t})=>e.createElement("svg",{className:"animate-spin ".concat(t),xmlns:"http://www.w3.org/2000/svg",fill:"none",viewBox:"0 0 24 24"},e.createElement("circle",{className:"opacity-25",cx:"12",cy:"12",r:"10",stroke:"currentColor",strokeWidth:"4"}),e.createElement("path",{className:"opacity-75",fill:"currentColor",d:"M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"})),y=({className:t})=>e.createElement("img",{src:"https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download-300x300.png",alt:"Ponsri School Logo",className:t}),k=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"}),e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M15 12a3 3 0 11-6 0 3 3 0 016 0z"})),_=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"})),C=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"})),E=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"})),j=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M5.636 5.636a9 9 0 1012.728 0M12 3v9"})),x=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M19 9l-7 7-7-7"})),R=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"})),I=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"})),A=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M12 4v16m8-8H4"})),P=({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"})),L=({onScanSuccess:t,onScanError:n})=>{const o=e.useRef(null);return e.useEffect((()=>{o.current||(o.current=new window.Html5QrcodeScanner("qr-reader",{fps:10,qrbox:{width:250,height:250},supportedScanTypes:[0]},!1)),o.current.render(t,n);const e=()=>{o.current&&2===o.current.getState()&&o.current.clear().catch((e=>{console.error("Failed to clear html5-qrcode-scanner.",e)}))};return ()=>e()}),[]),e.createElement("div",{id:"qr-reader",className:"w-full max-w-md mx-auto"})};const D=({records:t})=>e.createElement("div",{className:"w-full bg-white rounded-lg shadow-lg overflow-hidden"},e.createElement("div",{className:"p-4 sm:p-6 border-b border-slate-200"},e.createElement("h3",{className:"text-lg font-semibold text-slate-800"},"Attendance Log (",t.length,")")),0===t.length?e.createElement("div",{className:"text-center text-slate-500 py-16 px-6"},e.createElement("p",{className:"font-semibold"},"No students marked present yet."),e.createElement("p",{className:"text-sm mt-1"},"Start the scanner to begin taking attendance.")):e.createElement("div",{className:"max-h-[28rem] overflow-y-auto"},e.createElement("table",{className:"min-w-full"},e.createElement("thead",{className:"bg-slate-50 sticky top-0"},e.createElement("tr",null,e.createElement("th",{scope:"col",className:"px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"},"Student"),e.createElement("th",{scope:"col",className:"px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"},"Time"))),e.createElement("tbody",{className:"divide-y divide-slate-200"},t.map((t=>e.createElement("tr",{key:t.id,className:"hover:bg-slate-50 transition-colors"},e.createElement("td",{className:"px-6 py-4 whitespace-nowrap"},e.createElement("div",{className:"flex items-center space-x-3"},e.createElement("div",{className:"flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center"},e.createElement(m,{className:"w-6 h-6 text-green-600"})),e.createElement("div",null,e.createElement("div",{className:"text-sm font-medium text-slate-900"},t.name),e.createElement("div",{className:"text-xs text-slate-500"},"ID: ",t.id)))),e.createElement("td",{className:"px-6 py-4 whitespace-nowrap text-sm text-slate-600"},t.timestamp.toLocaleTimeString()))))))));const N=({records:t})=>e.createElement("div",{className:"w-full bg-white rounded-lg shadow-lg overflow-hidden"},0===t.length?e.createElement("div",{className:"text-center text-slate-500 py-16 px-6"},e.createElement("p",{className:"font-semibold"},"No teachers marked present yet."),e.createElement("p",{className:"text-sm mt-1"},"Scan a teacher's QR code to mark them present.")):e.createElement("div",{className:"max-h-[28rem] overflow-y-auto"},e.createElement("table",{className:"min-w-full"},e.createElement("thead",{className:"bg-slate-50 sticky top-0"},e.createElement("tr",null,e.createElement("th",{scope:"col",className:"px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"},"Teacher"),e.createElement("th",{scope:"col",className:"px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"},"Comment"))),e.createElement("tbody",{className:"divide-y divide-slate-200"},t.map((t=>e.createElement("tr",{key:t.teacherId,className:"hover:bg-slate-50 transition-colors"},e.createElement("td",{className:"px-6 py-4 whitespace-nowrap"},e.createElement("div",{className:"flex items-center space-x-3"},e.createElement("div",{className:"flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center"},e.createElement(m,{className:"w-6 h-6 text-green-600"})),e.createElement("div",null,e.createElement("div",{className:"text-sm font-medium text-slate-900"},t.teacherName),e.createElement("div",{className:"text-xs text-slate-500"},"ID: ",t.teacherId)))),e.createElement("td",{className:"px-6 py-4 whitespace-nowrap text-sm text-slate-600"},t.comment))))))));const O=({onSync:t})=>{const[n,o]=e.useState(!1),[s,i]=e.useState(null);return e.createElement("div",{className:"w-full p-6 bg-white rounded-lg shadow-lg space-y-6"},e.createElement("h3",{className:"text-lg font-semibold text-slate-800 border-b pb-3"},"Data Management"),e.createElement("div",{className:"space-y-2"},e.createElement("h4",{className:"font-semibold text-md text-slate-700"},"Server Sync"),e.createElement("div",{className:"flex flex-col sm:flex-row gap-4 items-center"},e.createElement("button",{onClick:async()=>{o(!0),await t(),o(!1),i((new Date).toLocaleTimeString())},disabled:n,className:"w-full sm:w-auto flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-slate-100 disabled:cursor-wait transition-colors"},n?e.createElement(e.Fragment,null,e.createElement(v,{className:"w-5 h-5 mr-2"})," Syncing..."):e.createElement(e.Fragment,null,e.createElement((({className:t})=>e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:t,fill:"none",viewBox:"0 0 24 24",stroke:"currentColor",strokeWidth:2},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",d:"M4 4v5h5M20 20v-5h-5M4 4a14.95 14.95 0 0114.364 2.636m0 0A15.05 15.05 0 0120 20m-1.636-13.364A14.95 14.95 0 015.636 17.364m0 0A15.05 15.05 0 014 4"}))),{className:"w-5 h-5 mr-2"})," Refresh Data")),s&&e.createElement("p",{className:"text-xs text-slate-500"},"Last synced at ",s))))},O=({teachers:t,attendance:n,onAttendanceChange:o,onSubmit:a})=>{const[s,i]=e.useState((new Date).toISOString().split("T")[0]),[l,d]=e.useState(!1);return e.createElement("div",{className:"bg-white rounded-lg shadow-lg"},e.createElement("div",{className:"p-4 border-b space-y-4 md:flex md:items-center md:justify-between md:space-y-0"},e.createElement("h2",{className:"text-xl font-semibold text-slate-800"},"Manual Teacher Attendance"),e.createElement("div",{className:"flex items-center gap-4"},e.createElement("input",{type:"date",value:s,onChange:e=>i(e.target.value),className:"px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"}),e.createElement("button",{onClick:async()=>{d(!0);const e=t.map((e=>{const t=n.get(e.id)||{status:"Present",comment:""};return{teacherId:e.id,teacherName:e.name,date:s,status:t.status,comment:t.comment}}));await a(e),d(!1)},disabled:0===t.length||l,className:"inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:bg-indigo-500 disabled:cursor-wait"},l?e.createElement(e.Fragment,null,e.createElement(w,{className:"w-5 h-5 mr-2"}),"Submitting..."):e.createElement(e.Fragment,null,"Submit")))),e.createElement("div",{className:"overflow-x-auto max-h-96"},e.createElement("table",{className:"min-w-full divide-y divide-slate-200"},e.createElement("thead",{className:"bg-slate-50 sticky top-0"},e.createElement("tr",null,e.createElement("th",{scope:"col",className:"px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// IMPORTANT: Allow the 'X-Sync-Key' header for CORS requests.
+add_filter( 'rest_allowed_cors_headers', function( \\$allowed_headers ) {
+    \\$allowed_headers[] = 'x-sync-key';
+    return \\$allowed_headers;
+} );
+
+// Register the REST API routes
+add_action('rest_api_init', function () {
+    // Main data sync endpoint
+    register_rest_route('custom-sync/v1', '/data', array(
+        'methods' => 'GET',
+        'callback' => 'sync_app_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+    // Attendance submission endpoint
+    register_rest_route('custom-sync/v1', '/attendance', array(
+        'methods' => 'POST',
+        'callback' => 'receive_attendance_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+
+    // Class management endpoints
+    register_rest_route('custom-sync/v1', '/classes', array(
+        'methods' => 'GET',
+        'callback' => 'get_all_classes_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+    register_rest_route('custom-sync/v1', '/classes', array(
+        'methods' => 'POST',
+        'callback' => 'add_new_class_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+    register_rest_route('custom-sync/v1', '/classes/(?P<id>\\\\d+)', array(
+        'methods' => 'DELETE',
+        'callback' => 'delete_class_data',
+        'permission_callback' => 'sync_permission_check',
+    ));
+});
+
+// Permission check for the API key
+if (!function_exists('sync_permission_check')) {
+    function sync_permission_check(\\$request) {
+        \\$secret_key = \\$request->get_header('X-Sync-Key');
+        \\$stored_key = get_option('qr_app_secret_key', ''); 
+        if (empty(\\$stored_key) || empty(\\$secret_key) || !hash_equals(\\$stored_key, \\$secret_key)) {
+            return new WP_Error('rest_forbidden', 'Invalid or missing secret key.', array('status' => 401));
+        }
+        return true;
+    }
+}
+
+// Helper function to get user profile photo
+if (!function_exists('get_custom_user_photo_url')) {
+    function get_custom_user_photo_url(\\$user_id) {
+        \\$avatar_meta = get_user_meta(\\$user_id, 'smgt_user_avatar', true);
+        if (!empty(\\$avatar_meta)) {
+            // Case 1: It's an attachment ID
+            if (is_numeric(\\$avatar_meta)) {
+                \\$image_url = wp_get_attachment_image_url(\\$avatar_meta, 'full');
+                if (\\$image_url) {
+                    return \\$image_url;
+                }
+            }
+            // Case 2: It's already a full URL
+            if (is_string(\\$avatar_meta) && filter_var(\\$avatar_meta, FILTER_VALIDATE_URL)) {
+                return \\$avatar_meta;
+            }
+            // Case 3: It might be a relative URL (e.g., /wp-content/...)
+            if (is_string(\\$avatar_meta) && strpos(\\$avatar_meta, '/') === 0) {
+                return site_url(\\$avatar_meta);
+            }
+        }
+        // Fallback to the default WordPress avatar URL
+        return get_avatar_url(\\$user_id);
+    }
+}
+
+// Central function to fetch class data
+if (!function_exists('fetch_class_data_from_db')) {
+    function fetch_class_data_from_db() {
+        global \\$wpdb;
+        \\$class_table = \\$wpdb->prefix . 'smgt_class';
+        \\$usermeta_table = \\$wpdb->prefix . 'usermeta';
+
+        if (\\$wpdb->get_var("SHOW TABLES LIKE '\\$class_table'") != \\$class_table) {
+            return []; // Return empty if table doesn't exist
+        }
+
+        \\$classes_results = \\$wpdb->get_results("SELECT * FROM \\$class_table");
+        \\$classes_data = array();
+
+        foreach(\\$classes_results as \\$class) {
+            \\$student_count = \\$wpdb->get_var(\\$wpdb->prepare(
+                "SELECT COUNT(*) FROM \\$usermeta_table WHERE meta_key = 'class_name' AND meta_value = %s", \\$class->class_name
+            ));
+
+            \\$classes_data[] = array(
+                'id' => (string)\\$class->class_id,
+                'class_name' => \\$class->class_name,
+                'class_numeric' => \\$class->class_numeric,
+                'class_section' => maybe_unserialize(\\$class->section_name),
+                'class_capacity' => \\$class->class_capacity,
+                'student_count' => (int)\\$student_count,
+            );
+        }
+        return \\$classes_data;
+    }
+}
+
+// Callback for GET /classes
+if (!function_exists('get_all_classes_data')) {
+    function get_all_classes_data(\\$request) {
+        return new WP_REST_Response(fetch_class_data_from_db(), 200);
+    }
+}
+
+// Callback function for main data sync GET /data
+if (!function_exists('sync_app_data')) {
+    function sync_app_data(\\$request) {
+        \\$response_data = array(
+            'students' => array(),
+            'teachers' => array(),
+            'classes'  => array(),
+        );
+
+        // Fetch Students
+        \\$student_users = get_users(array('role' => 'student'));
+        foreach (\\$student_users as \\$user) {
+            \\$response_data['students'][] = array(
+                'studentId'     => (string)\\$user->ID,
+                'studentName'   => \\$user->display_name,
+                'class'         => get_user_meta(\\$user->ID, 'class_name', true),
+                'section'       => get_user_meta(\\$user->ID, 'class_section', true),
+                'rollNumber'    => get_user_meta(\\$user->ID, 'roll_id', true),
+                'contactNumber' => get_user_meta(\\$user->ID, 'mobile', true) ?: get_user_meta(\\$user->ID, 'phone', true),
+                'profilePhotoUrl' => get_custom_user_photo_url(\\$user->ID),
+            );
+        }
+
+        // Fetch Teachers
+        \\$teacher_users = get_users(array('role' => 'teacher'));
+        foreach (\\$teacher_users as \\$user) {
+            \\$response_data['teachers'][] = array(
+                'id'    => (string)\\$user->ID,
+                'name'  => \\$user->display_name,
+                'role'  => 'Teacher',
+                'email' => \\$user->user_email,
+                'phone' => get_user_meta(\\$user->ID, 'mobile', true) ?: get_user_meta(\\$user->ID, 'phone', true),
+                'profilePhotoUrl' => get_custom_user_photo_url(\\$user->ID),
+            );
+        }
+
+        // Fetch Classes
+        \\$response_data['classes']  = fetch_class_data_from_db();
+
+        return new WP_REST_Response(\\$response_data, 200);
+    }
+}
+
+// Callback function for POST /attendance
+if (!function_exists('receive_attendance_data')) {
+    function receive_attendance_data(\\$request) {
+        global \\$wpdb;
+        \\$params = \\$request->get_json_params();
+        \\$attendance_table = \\$wpdb->prefix . 'smgt_attendence';
+
+        // Handle Students
+        if (isset(\\$params['students']) && is_array(\\$params['students'])) {
+            foreach (\\$params['students'] as \\$student_record) {
+                \\$user_id = (int)\\$student_record['id'];
+                \\$attendance_date = (new DateTime(\\$student_record['timestamp']))->format('Y-m-d');
+
+                \\$existing_record = \\$wpdb->get_row(\\$wpdb->prepare(
+                    "SELECT attend_id FROM \\$attendance_table WHERE user_id = %d AND attendence_date = %s AND role_name = 'student'",
+                    \\$user_id,
+                    \\$attendance_date
+                ));
+
+                \\$data = array(
+                    'user_id' => \\$user_id,
+                    'attendence_date' => \\$attendance_date,
+                    'status' => 'Present',
+                    'attendence_by' => 1,
+                    'role_name' => 'student',
+                    'comment' => 'Present via QR Scan'
+                );
+
+                if (\\$existing_record) {
+                    \\$wpdb->update(\\$attendance_table, \\$data, array('attend_id' => \\$existing_record->attend_id));
+                } else {
+                    \\$wpdb->insert(\\$attendance_table, \\$data);
+                }
+            }
+        }
+
+        // Handle Teachers
+        if (isset(\\$params['teachers']) && is_array(\\$params['teachers'])) {
+            foreach (\\$params['teachers'] as \\$teacher_record) {
+                \\$user_id = (int)\\$teacher_record['teacherId'];
+                \\$attendance_date = \\$teacher_record['date'];
+
+                \\$existing_record = \\$wpdb->get_row(\\$wpdb->prepare(
+                    "SELECT attend_id FROM \\$attendance_table WHERE user_id = %d AND attendence_date = %s AND role_name = 'teacher'",
+                    \\$user_id,
+                    \\$attendance_date
+                ));
+
+                \\$data = array(
+                    'user_id' => \\$user_id,
+                    'attendence_date' => \\$attendance_date,
+                    'status' => \\$teacher_record['status'],
+                    'comment' => \\$teacher_record['comment'],
+                    'attendence_by' => 1,
+                    'role_name' => 'teacher'
+                );
+
+                if (\\$existing_record) {
+                    \\$wpdb->update(\\$attendance_table, \\$data, array('attend_id' => \\$existing_record->attend_id));
+                } else {
+                    \\$wpdb->insert(\\$attendance_table, \\$data);
+                }
+            }
+        }
+
+        return new WP_REST_Response(array('success' => true, 'message' => 'Attendance recorded successfully.'), 200);
+    }
+}
+
+// Callback for POST /classes
+if (!function_exists('add_new_class_data')) {
+    function add_new_class_data(\\$request) {
+        global \\$wpdb;
+        \\$params = \\$request->get_json_params();
+        \\$class_table = \\$wpdb->prefix . 'smgt_class';
+
+        \\$data_to_insert = array(
+            'class_name' => sanitize_text_field(\\$params['class_name']),
+            'class_numeric' => intval(\\$params['class_numeric']),
+            'section_name' => serialize(\\$params['class_section']), // Serialize array for storage
+            'class_capacity' => intval(\\$params['class_capacity']),
+        );

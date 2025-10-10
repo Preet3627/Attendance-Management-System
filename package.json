@@ -11,7 +11,7 @@
   "dependencies": {
     "react-dom": "^19.2.0",
     "react": "^19.2.0",
-    "qrcode.react": "^4.2.0",
+    "qrcode.react": "4.2.0",
     "jszip": "^3.10.1",
     "esbuild-wasm": "^0.25.10"
   },

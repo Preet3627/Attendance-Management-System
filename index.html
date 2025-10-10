@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Attendance</title>
     <link rel="icon" href="https://ponsrischool.in/wp-content/uploads/2025/03/cropped-download.png" type="image/png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#ffffff">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // Polyfill for html5-qrcode
@@ -14,6 +17,20 @@
     </script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
+      body {
+        background-image: url('https://ponsrischool.in/wp-content/uploads/2024/02/DJI_0036-scaled.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+      }
+      .dark body {
+        background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://ponsrischool.in/wp-content/uploads/2024/02/DJI_0036-scaled.jpg');
+      }
+      #root {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
       @media screen {
         /* Hide the dedicated print container on screen */
         #print-root {
@@ -22,13 +39,14 @@
       }
       @media print {
         @page {
-          size: A4;
+          size: A4 portrait;
           margin: 1cm;
         }
 
         body {
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
+          background-image: none;
         }
         
         /* Hide the main app content when printing */
@@ -46,21 +64,25 @@
             grid-template-columns: 1fr 1fr;
             gap: 10mm;
             justify-items: center;
+            align-content: start;
+        }
+        
+        /* Ensure only 2 cards per page */
+        .id-card-print-container > div:nth-child(2n) {
+          page-break-after: always;
         }
 
         .portrait-card {
-            width: 54mm;
-            height: 85.6mm;
-            border: 1px dashed #ccc; /* Cut lines */
-            page-break-inside: avoid;
+            width: 85.6mm;
+            height: 54mm; /* Swapped for landscape on portrait page */
+            border: 1px dashed #999; /* Cut lines */
             overflow: hidden;
         }
 
         .landscape-card {
             width: 85.6mm;
             height: 54mm;
-            border: 1px dashed #ccc; /* Cut lines */
-            page-break-inside: avoid;
+            border: 1px dashed #999; /* Cut lines */
             overflow: hidden;
         }
       }
@@ -76,7 +98,7 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "qrcode.react": "https://aistudiocdn.com/qrcode.react@^4.2.0",
+    "qrcode.react": "https://cdn.jsdelivr.net/npm/qrcode.react@4.2.0/+esm",
     "jszip": "https://aistudiocdn.com/jszip@^3.10.1",
     "esbuild-wasm": "https://aistudiocdn.com/esbuild-wasm@^0.25.10"
   }

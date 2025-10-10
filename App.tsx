@@ -20,6 +20,7 @@ import ClassManager from './components/ClassManager';
 import { QrCodeIcon, CameraIcon, StopIcon, UsersIcon, IdentificationIcon, SettingsIcon, SpinnerIcon, DownloadIcon, BookOpenIcon } from './components/icons';
 
 type View = 'qr_attendance' | 'teacher_attendance' | 'class_management' | 'data_viewer' | 'settings';
+type Theme = 'light' | 'dark';
 
 const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -30,6 +31,7 @@ const App: React.FC = () => {
     const [isSyncingOnLoad, setIsSyncingOnLoad] = useState(true);
     const [view, setView] = useState<View>('qr_attendance');
     const [syncError, setSyncError] = useState<string | null>(null);
+    const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('THEME') as Theme) || 'light');
 
     // Data state
     const [students, setStudents] = useState<Student[]>([]);
@@ -50,12 +52,21 @@ const App: React.FC = () => {
 
     // Effects
     useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('THEME', theme);
+    }, [theme]);
+
+    useEffect(() => {
         if (currentUser && secretKey) {
             handleSync(secretKey);
         } else {
             setIsSyncingOnLoad(false);
         }
-    }, [currentUser]);
+    }, [currentUser, secretKey]);
 
     useEffect(() => {
         setStudentMap(new Map(students.map(s => [s.studentId, s])));
@@ -75,7 +86,9 @@ const App: React.FC = () => {
         localStorage.setItem('API_SECRET_KEY', key);
         setSecretKey(key);
         setView('qr_attendance');
-        handleSync(key);
+        if(!isSyncingOnLoad) { // Prevent double sync on initial load
+           handleSync(key);
+        }
     };
     
     const handleLogout = () => {
@@ -202,17 +215,17 @@ const App: React.FC = () => {
 
     if (isSyncingOnLoad) {
         return (
-            <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center gap-4">
-                <SpinnerIcon className="w-12 h-12 text-indigo-700" />
-                <p className="text-slate-600">Connecting to school server...</p>
+            <div className="min-h-screen flex flex-col justify-center items-center gap-4 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                <SpinnerIcon className="w-12 h-12 text-purple-600" />
+                <p className="text-slate-600 dark:text-slate-300">Connecting to school server...</p>
             </div>
         );
     }
     
     if (!secretKey) {
         return (
-             <div className="min-h-screen bg-slate-100 font-sans">
-                 <Header currentUser={currentUser} onLogout={()=>{}} onNavigate={()=>{}}/>
+             <div className="min-h-screen font-sans">
+                 <Header currentUser={currentUser} onLogout={()=>{}} onNavigate={()=>{}} theme={theme} setTheme={setTheme} />
                  <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                     <Settings onSaveKey={handleSaveKey} initialSetup={true} currentUser={currentUser} />
                  </main>
@@ -226,26 +239,26 @@ const App: React.FC = () => {
         return (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                 <div className="space-y-6">
-                    <div className="p-6 bg-white rounded-lg shadow-lg">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-4">QR Code Scanner</h3>
+                    <div className="p-6 bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20">
+                        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">QR Code Scanner</h3>
                         <button
                             onClick={() => setIsScanning(!isScanning)}
-                            className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
+                            className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                         >
                             {isScanning ? <><StopIcon className="w-5 h-5 mr-2" /> Stop Scanner</> : <><CameraIcon className="w-5 h-5 mr-2" /> Start Scanner</>}
                         </button>
-                        {isScanning && <div className="mt-4 border-t pt-4"><QrScanner onScanSuccess={handleScanSuccess} onScanError={handleScanError} /></div>}
-                        {scanError && <p className="mt-2 text-sm text-red-600">{scanError}</p>}
+                        {isScanning && <div className="mt-4 border-t border-slate-300/50 dark:border-slate-700/50 pt-4"><QrScanner onScanSuccess={handleScanSuccess} onScanError={handleScanError} /></div>}
+                        {scanError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{scanError}</p>}
                     </div>
                     <DataControls onSync={() => handleSync()} />
                 </div>
-                <div className="bg-white rounded-lg shadow-lg">
-                    <div className="border-b border-slate-200">
+                <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20">
+                    <div className="border-b border-slate-300/50 dark:border-slate-700/50">
                          <nav className="-mb-px flex space-x-6 px-6" aria-label="Tabs">
-                            <button onClick={() => setLogView('students')} className={`${logView === 'students' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+                            <button onClick={() => setLogView('students')} className={`${logView === 'students' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:border-slate-300 dark:hover:text-slate-200 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
                                 Student Log ({attendanceRecords.length})
                             </button>
-                            <button onClick={() => setLogView('teachers')} className={`${logView === 'teachers' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+                            <button onClick={() => setLogView('teachers')} className={`${logView === 'teachers' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:border-slate-300 dark:hover:text-slate-200 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
                                 Teacher Log ({teacherScanRecords.length})
                             </button>
                          </nav>
@@ -274,7 +287,7 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 font-sans">
+        <div className="min-h-screen font-sans text-slate-800 dark:text-slate-200">
             {lastScannedInfo && (
                 <ScanSuccessModal 
                     person={lastScannedInfo.person} 
@@ -282,11 +295,11 @@ const App: React.FC = () => {
                     onClose={() => setLastScannedInfo(null)}
                 />
             )}
-            <Header currentUser={currentUser} onLogout={handleLogout} onNavigate={(view) => setView(view as View)} />
+            <Header currentUser={currentUser} onLogout={handleLogout} onNavigate={(view) => setView(view as View)} theme={theme} setTheme={setTheme} />
 
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 {syncError && (
-                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow" role="alert">
+                    <div className="bg-red-100/80 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-lg backdrop-blur-sm" role="alert">
                         <p className="font-bold">Data Sync Error</p>
                         <p>{syncError}</p>
                     </div>
@@ -296,51 +309,51 @@ const App: React.FC = () => {
                         <select
                             id="tabs"
                             name="tabs"
-                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm"
+                            className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-xl backdrop-blur-lg"
                             onChange={(e) => setView(e.target.value as View)}
                             value={view}
                         >
                             <option value="qr_attendance">QR Attendance</option>
                             <option value="teacher_attendance">Teacher Attendance</option>
-                            <option value="class_management">Class</option>
+                            <option value="class_management">Class Management</option>
                             <option value="data_viewer">Manage Data & IDs</option>
                             <option value="settings">Settings</option>
                         </select>
                     </div>
                     <div className="hidden sm:block">
-                        <div className="border-b border-slate-200">
+                        <div className="border-b border-slate-300/50 dark:border-slate-700/50">
                             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                                 <button
                                     onClick={() => setView('qr_attendance')}
-                                    className={`${view === 'qr_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
+                                    className={`${view === 'qr_attendance' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer transition-colors`}
                                 >
                                     <QrCodeIcon className="w-5 h-5" />
                                     QR Attendance
                                 </button>
                                 <button
                                     onClick={() => setView('teacher_attendance')}
-                                    className={`${view === 'teacher_attendance' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
+                                    className={`${view === 'teacher_attendance' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer transition-colors`}
                                 >
                                     <UsersIcon className="w-5 h-5" />
                                     Teacher Attendance
                                 </button>
                                  <button
                                     onClick={() => setView('class_management')}
-                                    className={`${view === 'class_management' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
+                                    className={`${view === 'class_management' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer transition-colors`}
                                 >
                                     <BookOpenIcon className="w-5 h-5" />
-                                    Class
+                                    Class Management
                                 </button>
                                 <button
                                     onClick={() => setView('data_viewer')}
-                                    className={`${view === 'data_viewer' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
+                                    className={`${view === 'data_viewer' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer transition-colors`}
                                 >
                                     <IdentificationIcon className="w-5 h-5" />
                                     Manage Data & IDs
                                 </button>
                                 <button
                                     onClick={() => setView('settings')}
-                                    className={`${view === 'settings' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer`}
+                                    className={`${view === 'settings' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer transition-colors`}
                                 >
                                     <SettingsIcon className="w-5 h-5" />
                                     Settings
